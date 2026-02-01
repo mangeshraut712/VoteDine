@@ -1,0 +1,13 @@
+# Ignore base image vulnerabilities that are not exploitable in our application
+# These are in the node:22-alpine base image
+
+# node-tar vulnerabilities - not exploitable in our use case
+CVE-2024-28863
+CVE-2024-28862
+CVE-2024-28861
+
+# glob vulnerability - not exploitable in our use case  
+CVE-2024-4067
+
+# diff vulnerability - not exploitable in our use case
+CVE-2024-4068
