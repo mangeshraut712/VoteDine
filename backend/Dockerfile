@@ -2,7 +2,9 @@ FROM node:22.12-alpine AS base
 
 # Install dependencies stage
 FROM base AS dependencies
-RUN apk add --no-cache libc6-compat openssl
+# Upgrade system packages to fix security vulnerabilities
+RUN apk update && apk upgrade --no-cache && \
+  apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 # Install Prisma dependencies
@@ -28,6 +30,9 @@ FROM base AS production
 WORKDIR /app
 
 ENV NODE_ENV=production
+
+# Upgrade system packages to fix security vulnerabilities
+RUN apk update && apk upgrade --no-cache
 
 # Install only production dependencies
 COPY package.json package-lock.json* ./

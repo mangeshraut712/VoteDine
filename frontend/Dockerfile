@@ -3,7 +3,9 @@ FROM node:22.12-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+# Upgrade system packages to fix security vulnerabilities
+RUN apk update && apk upgrade --no-cache && \
+    apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
@@ -27,6 +29,9 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# Upgrade system packages to fix security vulnerabilities
+RUN apk update && apk upgrade --no-cache
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
