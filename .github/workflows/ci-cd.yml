@@ -206,7 +206,8 @@ jobs:
           # kubectl set image deployment/frontend frontend=ghcr.io/${{ github.repository_owner }}/frontend:${{ github.sha }} -n production
           # kubectl set image deployment/backend backend=ghcr.io/${{ github.repository_owner }}/backend:${{ github.sha }} -n production
 
-      - name: Notify deployment
+      - name: Notify deployment (optional)
+        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
         uses: slackapi/slack-github-action@v1.24.0
         with:
           payload: |
