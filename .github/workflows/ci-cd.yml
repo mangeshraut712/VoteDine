@@ -178,10 +178,14 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
+      - name: Lowercase repo name
+        run: |
+          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
+          image-ref: ghcr.io/${{ env.REPO_LOWER }}/backend:${{ github.sha }}
           format: 'sarif'
           output: 'trivy-results.sarif'
 
@@ -198,12 +202,16 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
+      - name: Lowercase repo name
+        run: |
+          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       - name: Deploy to staging
         run: |
           echo "Deploying to staging environment..."
           # Add your staging deployment commands here
-          # kubectl set image deployment/frontend frontend=ghcr.io/${{ github.repository }}/frontend:${{ github.sha }} -n staging
-          # kubectl set image deployment/backend backend=ghcr.io/${{ github.repository }}/backend:${{ github.sha }} -n staging
+          # kubectl set image deployment/frontend frontend=ghcr.io/${{ env.REPO_LOWER }}/frontend:${{ github.sha }} -n staging
+          # kubectl set image deployment/backend backend=ghcr.io/${{ env.REPO_LOWER }}/backend:${{ github.sha }} -n staging
 
   # E2E Tests
   e2e-tests:
@@ -240,12 +248,16 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
+      - name: Lowercase repo name
+        run: |
+          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       - name: Deploy to production
         run: |
           echo "Deploying to production environment..."
           # Add your production deployment commands here
-          # kubectl set image deployment/frontend frontend=ghcr.io/${{ github.repository }}/frontend:${{ github.sha }} -n production
-          # kubectl set image deployment/backend backend=ghcr.io/${{ github.repository }}/backend:${{ github.sha }} -n production
+          # kubectl set image deployment/frontend frontend=ghcr.io/${{ env.REPO_LOWER }}/frontend:${{ github.sha }} -n production
+          # kubectl set image deployment/backend backend=ghcr.io/${{ env.REPO_LOWER }}/backend:${{ github.sha }} -n production
 
       - name: Notify deployment
         uses: slackapi/slack-github-action@v1.24.0
