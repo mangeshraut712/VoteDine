@@ -14,10 +14,6 @@ jobs:
   frontend-lint-and-test:
     name: Frontend Lint & Test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,19 +23,19 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
       - name: Run ESLint
-        run: npm run lint
+        run: npm run lint -w frontend
 
       - name: Type check
-        run: npm run type-check
+        run: npm run type-check -w frontend
 
       - name: Run tests
-        run: npm run test -- --coverage
+        run: npm run test -w frontend -- --run --coverage
 
       - name: Upload coverage
         uses: codecov/codecov-action@v3
@@ -51,9 +47,6 @@ jobs:
   backend-lint-and-test:
     name: Backend Lint & Test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
 
     services:
       postgres:
@@ -89,31 +82,31 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
       - name: Generate Prisma client
-        run: npx prisma generate
+        run: npm run db:generate -w backend
 
       - name: Run database migrations
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db?schema=public
-        run: npx prisma migrate deploy
+        run: cd backend && npx prisma migrate deploy
 
       - name: Run ESLint
-        run: npm run lint
+        run: npm run lint -w backend
 
       - name: Type check
-        run: npm run type-check
+        run: npm run type-check -w backend
 
       - name: Run tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db?schema=public
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-secret
-        run: npm run test -- --coverage
+        run: npm run test -w backend -- --run --coverage
 
       - name: Upload coverage
         uses: codecov/codecov-action@v3
@@ -224,19 +217,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
-        run: |
-          cd frontend
-          npm ci
+        run: npm ci
 
       - name: Install Playwright
-        run: |
-          cd frontend
-          npx playwright install --with-deps
+        run: npx playwright install --with-deps -w frontend
 
       - name: Run E2E tests
-        run: |
-          cd frontend
-          npm run test:e2e
+        run: npm run test:e2e -w frontend
         env:
           BASE_URL: https://staging.yourapp.com
 
