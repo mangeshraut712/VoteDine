@@ -16,12 +16,12 @@ describe("Utility Functions", () => {
 
 describe("Performance Utilities", () => {
     it("should export debounce function", () => {
-        const debounce = (_fn: Function, _delay: number): (() => void) => (): void => { };
+        const debounce = (_fn: (...args: unknown[]) => void, _delay: number): (() => void) => (): void => { };
         expect(typeof debounce).toBe("function");
     });
 
     it("debounce should delay execution", () => {
-        const debounce = (fn: Function, delay: number): (() => void) => {
+        const debounce = (fn: (...args: unknown[]) => void, delay: number): (() => void) => {
             let timeout: ReturnType<typeof setTimeout> | undefined;
             return (...args: unknown[]): void => {
                 clearTimeout(timeout);
