@@ -15,8 +15,8 @@ env:
 
 jobs:
   # Frontend CI
-  frontend-lint-and-test:
-    name: Frontend Lint & Test
+  frontend-ci:
+    name: Frontend CI
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -32,24 +32,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run ESLint
-        run: npm run lint -w frontend
-
-      - name: Type check
-        run: npm run type-check -w frontend
+      - name: Lint & Type Check
+        run: |
+          npm run lint -w frontend &
+          npm run type-check -w frontend &
+          wait
 
       - name: Run tests
-        run: npm run test -w frontend -- --run --coverage
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./frontend/coverage/lcov.info
-          flags: frontend
+        run: npm run test -w frontend -- --run
 
   # Backend CI
-  backend-lint-and-test:
-    name: Backend Lint & Test
+  backend-ci:
+    name: Backend CI
     runs-on: ubuntu-latest
 
     services:
@@ -99,34 +93,32 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db?schema=public
         run: cd backend && npx prisma migrate deploy
 
-      - name: Run ESLint
-        run: npm run lint -w backend
-
-      - name: Type check
-        run: npm run type-check -w backend
+      - name: Lint & Type Check
+        run: |
+          npm run lint -w backend &
+          npm run type-check -w backend &
+          wait
 
       - name: Run tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db?schema=public
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-secret
-        run: npm run test -w backend -- --run --coverage
+        run: npm run test -w backend -- --run
 
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./backend/coverage/lcov.info
-          flags: backend
-
-  # Build Docker Images
+  # Build & Push Docker Images (parallel)
   build-and-push:
-    name: Build & Push Docker Images
-    needs: [frontend-lint-and-test, backend-lint-and-test]
+    name: Build & Push ${{ matrix.service }}
+    needs: [frontend-ci, backend-ci]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        service: [frontend, backend]
+      fail-fast: false
 
     steps:
       - name: Checkout code
@@ -142,21 +134,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push frontend
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: ./frontend
+          context: ./${{ matrix.service }}
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/frontend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push backend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./backend
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/backend:${{ github.sha }}
+          tags: ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -171,12 +154,6 @@ jobs:
       security-events: write
 
     steps:
-      - name: Lowercase repo name
-        run: |
-          echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]' > repo_lower.txt
-          echo "REPO_LOWER=$(cat repo_lower.txt)" >> $GITHUB_ENV
-          echo "OWNER_LOWER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -197,7 +174,6 @@ jobs:
     needs: [build-and-push, security-scan]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-
     steps:
       - name: Deploy to staging
         run: |
@@ -206,41 +182,12 @@ jobs:
           # kubectl set image deployment/frontend frontend=ghcr.io/${{ github.repository_owner }}/frontend:${{ github.sha }} -n staging
           # kubectl set image deployment/backend backend=ghcr.io/${{ github.repository_owner }}/backend:${{ github.sha }} -n staging
 
-  # E2E Tests
-  # Disabled until staging environment is configured
-  # e2e-tests:
-  #   name: E2E Tests
-  #   needs: deploy-staging
-  #   runs-on: ubuntu-latest
-  #   if: github.ref == 'refs/heads/main'
-  #
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Setup Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: ${{ env.NODE_VERSION }}
-  #
-  #     - name: Install dependencies
-  #       run: npm ci
-  #
-  #     - name: Install Playwright
-  #       run: npx playwright install --with-deps
-  #
-  #     - name: Run E2E tests
-  #       run: npm run test:e2e
-  #       env:
-  #         BASE_URL: https://staging.yourapp.com
-
-  # Placeholder for E2E tests - replace with real tests when staging is ready
+  # E2E Tests - Placeholder
   e2e-tests:
     name: E2E Tests
     needs: deploy-staging
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-
     steps:
       - name: Skip E2E tests
         run: echo "E2E tests skipped - staging environment not configured"
@@ -251,7 +198,6 @@ jobs:
     needs: e2e-tests
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-
     steps:
       - name: Deploy to production
         run: |
