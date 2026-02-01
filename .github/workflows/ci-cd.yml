@@ -138,7 +138,7 @@ jobs:
 
       - name: Lowercase repo name
         run: |
-          echo "REPO_LOWER=${GITHUB_REPOSITORY_OWNER,,}/${GITHUB_REPOSITORY#*/}" | tr '[:upper:]' '[:lower:]' > repo_lower.txt
+          echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]' > repo_lower.txt
           echo "REPO_LOWER=$(cat repo_lower.txt)" >> $GITHUB_ENV
 
       - name: Extract metadata
@@ -181,7 +181,8 @@ jobs:
     steps:
       - name: Lowercase repo name
         run: |
-          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+          echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]' > repo_lower.txt
+          echo "REPO_LOWER=$(cat repo_lower.txt)" >> $GITHUB_ENV
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
@@ -205,7 +206,8 @@ jobs:
     steps:
       - name: Lowercase repo name
         run: |
-          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+          echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]' > repo_lower.txt
+          echo "REPO_LOWER=$(cat repo_lower.txt)" >> $GITHUB_ENV
 
       - name: Deploy to staging
         run: |
@@ -251,7 +253,8 @@ jobs:
     steps:
       - name: Lowercase repo name
         run: |
-          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+          echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]' > repo_lower.txt
+          echo "REPO_LOWER=$(cat repo_lower.txt)" >> $GITHUB_ENV
 
       - name: Deploy to production
         run: |
