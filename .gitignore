@@ -130,7 +130,13 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+# Security & Secrets
 env.json
+map.html
+app/map.html
+*.html
+!frontend/.next/**/*.html
+!node_modules/**/*.html
 
 # Legacy backup
 .legacy-backup-app/
