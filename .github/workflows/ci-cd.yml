@@ -219,6 +219,7 @@ jobs:
         run: |
           echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]' > repo_lower.txt
           echo "REPO_LOWER=$(cat repo_lower.txt)" >> $GITHUB_ENV
+          echo "OWNER_LOWER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Deploy to staging
         run: |
@@ -266,6 +267,7 @@ jobs:
         run: |
           echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]' > repo_lower.txt
           echo "REPO_LOWER=$(cat repo_lower.txt)" >> $GITHUB_ENV
+          echo "OWNER_LOWER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Deploy to production
         run: |
