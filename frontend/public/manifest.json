@@ -1,0 +1,81 @@
+{
+    "name": "VoteDine - Group Dining Made Simple",
+    "short_name": "VoteDine",
+    "description": "The smartest way to decide where to eat with friends. AI-powered recommendations, real-time voting, and seamless planning.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#f97316",
+    "orientation": "portrait-primary",
+    "scope": "/",
+    "icons": [
+        {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/screenshot-mobile.png",
+            "sizes": "390x844",
+            "type": "image/png",
+            "form_factor": "narrow"
+        },
+        {
+            "src": "/screenshot-desktop.png",
+            "sizes": "1920x1080",
+            "type": "image/png",
+            "form_factor": "wide"
+        }
+    ],
+    "categories": [
+        "food",
+        "social",
+        "lifestyle"
+    ],
+    "shortcuts": [
+        {
+            "name": "Create Room",
+            "short_name": "New Room",
+            "description": "Start a new voting room",
+            "url": "/rooms?action=create",
+            "icons": [
+                {
+                    "src": "/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "AI Picks",
+            "short_name": "AI Picks",
+            "description": "Get AI restaurant recommendations",
+            "url": "/ai-recommendations",
+            "icons": [
+                {
+                    "src": "/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ],
+    "share_target": {
+        "action": "/share",
+        "method": "POST",
+        "enctype": "multipart/form-data",
+        "params": {
+            "title": "title",
+            "text": "text",
+            "url": "url"
+        }
+    },
+    "prefer_related_applications": false
+}

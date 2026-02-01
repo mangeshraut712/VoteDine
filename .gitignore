@@ -131,3 +131,19 @@ dist
 .pnp.*
 
 env.json
+
+# Legacy backup
+.legacy-backup-app/
+
+# Prisma
+prisma/*.db
+
+# Redis
+dump.rdb
+
+# Turbo
+.turbo
+
+# Playwright
+test-results/
+playwright-report/

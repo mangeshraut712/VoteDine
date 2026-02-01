@@ -1,0 +1,17 @@
+{
+  "name": "VoteDine",
+  "short_name": "VoteDine",
+  "description": "AI-powered restaurant voting, planning, and sharing.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff7ed",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "/icons/votedine-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
