@@ -212,7 +212,7 @@ jobs:
 
       - name: Notify deployment (optional)
         uses: slackapi/slack-github-action@v1.24.0
-        if: ${{ github.event_name != 'pull_request' }}
+        if: github.event_name != 'pull_request' && env.SLACK_WEBHOOK_URL != ''
         with:
           payload: |
             {
