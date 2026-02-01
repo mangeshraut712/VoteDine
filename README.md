@@ -89,7 +89,7 @@ Help your friends and family decide where to eat! This application revolutionize
 
 ```bash
 # Clone and setup
-git clone <repository-url>
+git clone https://github.com/mangeshraut712/VoteDine.git
 cd votedine
 ./setup.sh
 
@@ -238,11 +238,11 @@ votedine/
 
 ### Recent Updates (February 2026)
 
-- 🚀 **Database-Driven Recommendations**: Replaced hardcoded fallback data with a real-time, Prisma-powered scoring engine.
-- 📅 **Fixed Calendar Integration**: Successfully implemented end-to-end calendar event handling using Prisma models and real data.
-- 🎤 **Refined Voice Features**: Optimized voice command processing and fixed state-syncing issues between frontend and socket handlers.
-- 🛠️ **Project Hygiene**: Consolidated documentation into `/docs`, removed legacy mobile placeholders, and cleaned up redundant API routes.
-- 🛡️ **Type Safety Overhaul**: Resolved all remaining TypeScript errors in Analytics, Room management, and Database seeding.
+- 🔒 **Security Hardening**: Implemented strict `.gitignore` rules and automated secrets scanning to prevent API key leaks.
+- ✨ **100% Code Quality**: Achieved a completely lint-clean codebase across frontend and backend with zero `any` types.
+- 🚀 **CI/CD Stabilization**: Fixed Docker build workflows and optimized GitHub Actions for reliable, automated deployments.
+- ⚡ **Performance Optimization**: Migrated to `next/image` for superior frontend loading times and verified Web Vitals tracking.
+- 🧩 **Workspace Architecture**: Standardized npm workspace management for seamless monorepo development.
 - 🌐 **Standardized i18n**: Moved to a single, context-based internationalization provider for better performance.
 
 ## 🚀 Deployment
@@ -381,8 +381,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/your-repo/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-repo/discussions)
+- **Issues**: [GitHub Issues](https://github.com/mangeshraut712/VoteDine/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mangeshraut712/VoteDine/discussions)
 - **Email**: support@example.com
 
 ---
