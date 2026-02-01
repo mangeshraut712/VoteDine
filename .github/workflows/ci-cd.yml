@@ -121,6 +121,9 @@ jobs:
     needs: [frontend-lint-and-test, backend-lint-and-test]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout code
@@ -177,6 +180,9 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       - name: Lowercase repo name
