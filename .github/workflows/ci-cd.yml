@@ -154,6 +154,9 @@ jobs:
       security-events: write
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -162,6 +165,7 @@ jobs:
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
+          trivyignores: '.trivyignore'
 
       - name: Upload scan results
         uses: github/codeql-action/upload-sarif@v4
