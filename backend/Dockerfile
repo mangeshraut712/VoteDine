@@ -29,9 +29,9 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Install only production dependencies
+ # Install only production dependencies
 COPY package.json package-lock.json* ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 
 # Copy Prisma schema and generate client
 COPY prisma ./prisma/
