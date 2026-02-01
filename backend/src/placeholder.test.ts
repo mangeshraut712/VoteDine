@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 describe("Backend Utilities", () => {
     describe("Logger", () => {
@@ -17,10 +17,10 @@ describe("Backend Utilities", () => {
 
         it("logger should have correct methods", () => {
             const logger = {
-                info: (msg: string) => console.log(msg),
-                error: (msg: string) => console.error(msg),
-                warn: (msg: string) => console.warn(msg),
-                debug: (msg: string) => console.debug(msg),
+                info: (msg: string): void => console.log(msg),
+                error: (msg: string): void => console.error(msg),
+                warn: (msg: string): void => console.warn(msg),
+                debug: (msg: string): void => console.debug(msg),
             };
             expect(typeof logger.info).toBe("function");
             expect(typeof logger.error).toBe("function");
@@ -33,14 +33,14 @@ describe("Backend Utilities", () => {
 describe("Validation Schemas", () => {
     describe("User registration schema", () => {
         it("should validate username length", () => {
-            const isValidUsername = (username: string) => username.length >= 3 && username.length <= 50;
+            const isValidUsername = (username: string): boolean => username.length >= 3 && username.length <= 50;
             expect(isValidUsername("abc")).toBe(true);
             expect(isValidUsername("ab")).toBe(false);
             expect(isValidUsername("a".repeat(51))).toBe(false);
         });
 
         it("should validate password length", () => {
-            const isValidPassword = (password: string) => password.length >= 6;
+            const isValidPassword = (password: string): boolean => password.length >= 6;
             expect(isValidPassword("123456")).toBe(true);
             expect(isValidPassword("12345")).toBe(false);
         });
@@ -48,13 +48,13 @@ describe("Validation Schemas", () => {
 
     describe("Room creation schema", () => {
         it("should validate room name", () => {
-            const isValidRoomName = (name: string) => name.length >= 1 && name.length <= 100;
+            const isValidRoomName = (name: string): boolean => name.length >= 1 && name.length <= 100;
             expect(isValidRoomName("Test Room")).toBe(true);
             expect(isValidRoomName("")).toBe(false);
         });
 
         it("should validate radius range", () => {
-            const isValidRadius = (radius: number) => radius >= 100 && radius <= 50000;
+            const isValidRadius = (radius: number): boolean => radius >= 100 && radius <= 50000;
             expect(isValidRadius(1000)).toBe(true);
             expect(isValidRadius(50)).toBe(false);
             expect(isValidRadius(100000)).toBe(false);
@@ -64,12 +64,15 @@ describe("Validation Schemas", () => {
 
 describe("Token Utilities", () => {
     it("should generate valid JWT payload structure", () => {
-        const createPayload = (userId: string, username: string) => ({
-            userId,
-            username,
-            iat: Math.floor(Date.now() / 1000),
-            exp: Math.floor(Date.now() / 1000) + 86400, // 24 hours
-        });
+        const createPayload = (userId: string, username: string) => {
+            const now = Math.floor(Date.now() / 1000);
+            return {
+                userId,
+                username,
+                iat: now,
+                exp: now + 86400, // 24 hours
+            };
+        };
 
         const payload = createPayload("123", "testuser");
         expect(payload).toHaveProperty("userId", "123");
