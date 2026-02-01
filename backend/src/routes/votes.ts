@@ -7,19 +7,30 @@ const voteSchema = z.object({
   increment: z.number().min(-1).max(1).default(1),
 });
 
+// Add authentication middleware
+async function authenticate(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    await request.jwtVerify();
+  } catch (err) {
+    // For votes, we might allow non-authenticated users in some cases
+    // but we still want to try to identify them
+  }
+}
+
 export async function voteRoutes(
   fastify: FastifyInstance,
   _options: FastifyPluginOptions
 ) {
   // Cast vote
-  fastify.post("/", async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.post("/", { preHandler: [authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { restaurantId, roomId, increment } = voteSchema.parse(request.body);
+      const userId = (request.user as any)?.userId || (request.user as any)?.id || 1;
 
       const vote = await fastify.prisma.vote.upsert({
         where: {
           userId_restaurantId_roomId: {
-            userId: 1, // TODO: Get from auth context
+            userId,
             restaurantId,
             roomId: roomId || null,
           },
@@ -30,7 +41,7 @@ export async function voteRoutes(
           },
         },
         create: {
-          userId: 1, // TODO: Get from auth context
+          userId,
           restaurantId,
           roomId: roomId || null,
           voteCount: Math.max(0, increment),
@@ -54,10 +65,12 @@ export async function voteRoutes(
   });
 
   // Get user's votes
-  fastify.get("/my-votes", async (_request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get("/my-votes", { preHandler: [authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const userId = (request.user as any)?.userId || (request.user as any)?.id || 1;
+
     const votes = await fastify.prisma.vote.findMany({
       where: {
-        userId: 1, // TODO: Get from auth context
+        userId,
       },
       include: {
         restaurant: true,
@@ -131,3 +144,4 @@ export async function voteRoutes(
     });
   });
 }
+

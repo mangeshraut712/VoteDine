@@ -1,17 +1,20 @@
 import { PrismaClient } from "@prisma/client";
+import "@fastify/jwt";
 
-declare module "fastify" {
-  interface FastifyInstance {
-    prisma: PrismaClient;
-  }
-
-  interface FastifyRequest {
-    user?: {
-      id?: number;
+declare module "@fastify/jwt" {
+  interface FastifyJWT {
+    user: {
+      id: number;
       userId: number;
       username: string;
       email?: string;
     };
+  }
+}
+
+declare module "fastify" {
+  interface FastifyInstance {
+    prisma: PrismaClient;
   }
 }
 

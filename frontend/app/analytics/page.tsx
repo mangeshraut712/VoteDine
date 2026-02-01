@@ -14,7 +14,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Dashboard */}
-          <AnalyticsDashboard globalView={true} />
+          <AnalyticsDashboard />
         </div>
       </div>
     </div>

@@ -143,49 +143,57 @@ export default function AnalyticsDashboard() {
     );
   }
 
-  const stats = [
-    {
-      icon: Users,
-      label: "Total Rooms",
-      value: data?.totalRooms || 0,
-      change: data?.trends?.roomsChange,
-      color: "from-blue-500 to-cyan-500",
-      trend: (data?.trends?.roomsChange
-        ? data.trends.roomsChange > 0
-          ? "up"
-          : data.trends.roomsChange < 0
-            ? "down"
-            : "neutral"
-        : undefined) as "up" | "down" | "neutral" | undefined,
-    },
-    {
-      icon: TrendingUp,
-      label: "Active Rooms",
-      value: data?.activeRooms || 0,
-      color: "from-green-500 to-emerald-500",
-      trend: "up",
-    },
-    {
-      icon: Vote,
-      label: "Total Votes",
-      value: data?.totalVotes || 0,
-      change: data?.trends?.votesChange,
-      color: "from-orange-500 to-red-500",
-      trend: (data?.trends?.votesChange
-        ? data.trends.votesChange > 0
-          ? "up"
-          : data.trends.votesChange < 0
-            ? "down"
-            : "neutral"
-        : undefined) as "up" | "down" | "neutral" | undefined,
-    },
-    {
-      icon: Utensils,
-      label: "Top Cuisine",
-      value: data?.topCuisine || "Mixed",
-      color: "from-purple-500 to-pink-500",
-    },
-  ];
+  const stats: Array<{
+    icon: any;
+    label: string;
+    value: string | number;
+    change?: number;
+    color: string;
+    trend?: "up" | "down" | "neutral";
+  }> = [
+      {
+        icon: Users,
+        label: "Total Rooms",
+        value: data?.totalRooms || 0,
+        change: data?.trends?.roomsChange,
+        color: "from-blue-500 to-cyan-500",
+        trend: (data?.trends?.roomsChange
+          ? data.trends.roomsChange > 0
+            ? "up"
+            : data.trends.roomsChange < 0
+              ? "down"
+              : "neutral"
+          : undefined) as any,
+      },
+      {
+        icon: TrendingUp,
+        label: "Active Rooms",
+        value: data?.activeRooms || 0,
+        color: "from-green-500 to-emerald-500",
+        trend: "up" as const,
+      },
+      {
+        icon: Vote,
+        label: "Total Votes",
+        value: data?.totalVotes || 0,
+        change: data?.trends?.votesChange,
+        color: "from-orange-500 to-red-500",
+        trend: (data?.trends?.votesChange
+          ? data.trends.votesChange > 0
+            ? "up"
+            : data.trends.votesChange < 0
+              ? "down"
+              : "neutral"
+          : undefined) as any,
+      },
+      {
+        icon: Utensils,
+        label: "Top Cuisine",
+        value: data?.topCuisine || "Mixed",
+        color: "from-purple-500 to-pink-500",
+      },
+    ];
+
 
   return (
     <div className="space-y-8">

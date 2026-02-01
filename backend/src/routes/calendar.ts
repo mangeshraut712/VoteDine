@@ -60,9 +60,9 @@ export async function calendarRoutes(fastify: FastifyInstance) {
       );
 
       return reply.send(result);
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.code(500).send({ error: 'Failed to connect calendar' });
+    } catch (error: any) {
+      fastify.log.error(error, 'Failed to sync calendar:');
+      return reply.code(500).send({ error: 'Failed to sync calendar' });
     }
   });
 
@@ -95,8 +95,8 @@ export async function calendarRoutes(fastify: FastifyInstance) {
       await calendarService.disconnectCalendar(userId, provider as CalendarProvider);
 
       return reply.send({ success: true });
-    } catch (error) {
-      fastify.log.error(error);
+    } catch (error: any) {
+      fastify.log.error(error, 'Failed to disconnect calendar:');
       return reply.code(500).send({ error: 'Failed to disconnect calendar' });
     }
   });
@@ -164,8 +164,8 @@ export async function calendarRoutes(fastify: FastifyInstance) {
       );
 
       return reply.send(result);
-    } catch (error) {
-      fastify.log.error(error);
+    } catch (error: any) {
+      fastify.log.error(error, 'Failed to create calendar event:');
       return reply.code(500).send({ error: 'Failed to create calendar event' });
     }
   });
@@ -217,9 +217,9 @@ export async function calendarRoutes(fastify: FastifyInstance) {
       const events = await calendarService.getUpcomingEvents(userId);
 
       return reply.send({ events });
-    } catch (error) {
-      fastify.log.error('Failed to get calendar events:', error);
-      return reply.code(500).send({ error: 'Failed to get calendar events' });
+    } catch (error: any) {
+      fastify.log.error(error, 'Failed to list calendars:');
+      return reply.code(500).send({ error: 'Failed to list calendars' });
     }
   });
 

@@ -3,9 +3,6 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
 
-  // Modern optimizations
-  swcMinify: true,
-
   // Experimental features for 2026
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
