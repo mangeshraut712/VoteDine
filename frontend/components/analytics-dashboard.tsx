@@ -144,7 +144,7 @@ export default function AnalyticsDashboard() {
   }
 
   const stats: Array<{
-    icon: React.ElementType;
+    icon: React.ComponentType<{ className?: string }>;
     label: string;
     value: string | number;
     change?: number;
