@@ -229,7 +229,7 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Run E2E tests
-        run: npm run test:e2e -w frontend
+        run: npm run test:e2e
         env:
           BASE_URL: https://staging.yourapp.com
 
