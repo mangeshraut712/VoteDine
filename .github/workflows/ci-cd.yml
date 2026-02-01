@@ -9,6 +9,7 @@ on:
 env:
   NODE_VERSION: '22'
   REPO_LOWER: 'placeholder' # dynamically set in steps
+  OWNER_LOWER: 'placeholder' # dynamically set in steps
 
 jobs:
   # Frontend CI
