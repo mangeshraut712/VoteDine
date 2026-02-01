@@ -207,8 +207,8 @@ jobs:
           # kubectl set image deployment/backend backend=ghcr.io/${{ github.repository_owner }}/backend:${{ github.sha }} -n production
 
       - name: Notify deployment (optional)
-        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
         uses: slackapi/slack-github-action@v1.24.0
+        if: ${{ github.event_name != 'pull_request' }}
         with:
           payload: |
             {
