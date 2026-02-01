@@ -6,10 +6,12 @@ on:
   pull_request:
     branches: [main, develop]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   NODE_VERSION: '22'
-  REPO_LOWER: 'placeholder' # dynamically set in steps
-  OWNER_LOWER: 'placeholder' # dynamically set in steps
 
 jobs:
   # Frontend CI
@@ -159,7 +161,7 @@ jobs:
             type=sha
 
       - name: Build and push frontend
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./frontend
           push: true
@@ -168,7 +170,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build and push backend
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./backend
           push: true

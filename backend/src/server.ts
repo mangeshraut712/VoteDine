@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import jwt from "@fastify/jwt";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
+import rateLimit from "@fastify/rate-limit";
 import { Server } from "socket.io";
 import { createServer } from "http";
 import dotenv from "dotenv";
@@ -40,6 +41,17 @@ async function main() {
   await fastify.register(cors, {
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
+  });
+
+  // Rate limiting
+  await fastify.register(rateLimit, {
+    max: 100,
+    timeWindow: "1 minute",
+    errorResponseBuilder: (request, context) => ({
+      statusCode: 429,
+      error: "Too Many Requests",
+      message: `Rate limit exceeded. Try again in ${context.after}`,
+    }),
   });
 
   await fastify.register(jwt, {
@@ -84,6 +96,17 @@ async function main() {
 
   const port = parseInt(process.env.PORT || "3001");
   const host = process.env.HOST || "0.0.0.0";
+
+  // Graceful shutdown
+  const gracefulShutdown = async (signal: string) => {
+    logger.info(`Received ${signal}. Shutting down gracefully...`);
+    await fastify.close();
+    await prisma.$disconnect();
+    process.exit(0);
+  };
+
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
   try {
     await fastify.listen({ port, host });
