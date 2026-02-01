@@ -6,7 +6,6 @@ import swaggerUi from "@fastify/swagger-ui";
 import rateLimit from "@fastify/rate-limit";
 import { Server } from "socket.io";
 import { createServer } from "http";
-import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { userRoutes } from "./routes/users.js";
 import { roomRoutes } from "./routes/rooms.js";
@@ -19,8 +18,10 @@ import { socialShareRoutes } from "./routes/social-share.js";
 import { voiceCommandsRoutes } from "./routes/voice-commands.js";
 import { setupSocketHandlers } from "./socket/handlers.js";
 import { logger } from "./utils/logger.js";
-
-dotenv.config();
+import { validateEnv, env } from "./config/env.js";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
+import { securityHeaders, corsOptions } from "./middleware/security.js";
+import { requestLogger } from "./middleware/requestLogger.js";
 
 const prisma = new PrismaClient();
 
@@ -37,11 +38,21 @@ const io = new Server(server, {
 });
 
 async function main() {
+  // Validate environment variables
+  validateEnv();
+
   // Register plugins
-  await fastify.register(cors, {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    credentials: true,
-  });
+  await fastify.register(cors, corsOptions());
+
+  // Add security headers
+  fastify.addHook("onSend", securityHeaders);
+
+  // Add request logging
+  fastify.addHook("onRequest", requestLogger);
+
+  // Add error handler
+  fastify.setErrorHandler(errorHandler);
+  fastify.setNotFoundHandler(notFoundHandler);
 
   // Rate limiting
   await fastify.register(rateLimit, {
@@ -55,7 +66,7 @@ async function main() {
   });
 
   await fastify.register(jwt, {
-    secret: process.env.JWT_SECRET || "your-secret-key",
+    secret: env.JWT_SECRET,
   });
 
   await fastify.register(swagger, {
@@ -89,13 +100,27 @@ async function main() {
   // Setup Socket.io handlers
   setupSocketHandlers(io, prisma);
 
-  // Health check
-  fastify.get("/health", async () => {
-    return { status: "ok", timestamp: new Date().toISOString() };
+  // Health check with database status
+  fastify.get("/health", async (request, reply) => {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      return reply.send({
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        database: "connected",
+      });
+    } catch (_error) {
+      return reply.status(503).send({
+        status: "error",
+        timestamp: new Date().toISOString(),
+        database: "disconnected",
+      });
+    }
   });
 
-  const port = parseInt(process.env.PORT || "3001");
-  const host = process.env.HOST || "0.0.0.0";
+  const port = parseInt(env.PORT);
+  const host = env.HOST;
 
   // Graceful shutdown
   const gracefulShutdown = async (signal: string) => {
