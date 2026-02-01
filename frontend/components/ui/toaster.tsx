@@ -3,7 +3,7 @@
 import * as React from "react";
 import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils";
-import { Toast } from "@radix-ui/react-toast";
+import * as Toast from "@radix-ui/react-toast";
 import { useToast } from "@/hooks/use-toast";
 
 const toastVariants = cva(
@@ -44,7 +44,7 @@ const Toaster = () => {
         ...props
       }: ToasterToast) {
         return (
-          <Toast key={id} {...props}>
+          <Toast.Root key={id} {...props}>
             <div className="grid gap-1">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (
@@ -53,7 +53,7 @@ const Toaster = () => {
             </div>
             {action}
             <ToastClose />
-          </Toast>
+          </Toast.Root>
         );
       })}
       <ToastViewport />

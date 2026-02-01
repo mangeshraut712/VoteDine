@@ -8,10 +8,10 @@ const voteSchema = z.object({
 });
 
 // Add authentication middleware
-async function authenticate(request: FastifyRequest, reply: FastifyReply) {
+async function authenticate(request: FastifyRequest, _reply: FastifyReply) {
   try {
     await request.jwtVerify();
-  } catch (err) {
+  } catch (_err) {
     // For votes, we might allow non-authenticated users in some cases
     // but we still want to try to identify them
   }
@@ -25,7 +25,8 @@ export async function voteRoutes(
   fastify.post("/", { preHandler: [authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { restaurantId, roomId, increment } = voteSchema.parse(request.body);
-      const userId = (request.user as any)?.userId || (request.user as any)?.id || 1;
+      const user = request.user as { userId?: number; id?: number } | undefined;
+      const userId = user?.userId || user?.id || 1;
 
       const vote = await fastify.prisma.vote.upsert({
         where: {
@@ -66,7 +67,8 @@ export async function voteRoutes(
 
   // Get user's votes
   fastify.get("/my-votes", { preHandler: [authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const userId = (request.user as any)?.userId || (request.user as any)?.id || 1;
+    const user = request.user as { userId?: number; id?: number } | undefined;
+    const userId = user?.userId || user?.id || 1;
 
     const votes = await fastify.prisma.vote.findMany({
       where: {
