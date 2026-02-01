@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mic, MicOff, Sparkles, Volume2 } from "lucide-react";
+import { Mic, MicOff, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface SpeechRecognitionEvent extends Event {
@@ -128,8 +128,8 @@ export default function VoiceAssistant() {
           onClick={toggleListening}
           disabled={!supported}
           className={`flex-1 ${listening
-              ? "bg-red-500 hover:bg-red-600"
-              : "bg-orange-500 hover:bg-orange-600"
+            ? "bg-red-500 hover:bg-red-600"
+            : "bg-orange-500 hover:bg-orange-600"
             } text-white rounded-lg`}
         >
           {listening ? (

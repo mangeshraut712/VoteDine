@@ -116,7 +116,7 @@ export default function RoomPage({ params }: RoomPageProps) {
               name: m.guestName || m.user?.username || "Anonymous",
               isHost: m.isHost || false,
             })) || [],
-            restaurants: data.data.roomRestaurants?.map((rr: { restaurant: { id: number; name: string; cuisine?: string; votes?: any[] } }) => ({
+            restaurants: data.data.roomRestaurants?.map((rr: { restaurant: { id: number; name: string; cuisine?: string; votes?: unknown[] } }) => ({
               id: rr.restaurant.id,
               name: rr.restaurant.name,
               cuisine: rr.restaurant.cuisine || "Various",
@@ -130,7 +130,7 @@ export default function RoomPage({ params }: RoomPageProps) {
     return () => {
       newSocket.disconnect();
     };
-  }, [id]);
+  }, [id, isConnected]);
 
   const copyCode = () => {
     navigator.clipboard.writeText(roomState?.code || id);
@@ -138,7 +138,7 @@ export default function RoomPage({ params }: RoomPageProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleVote = (restaurantId: number, isUpvote: boolean) => {
+  const handleVote = (restaurantId: number, _isUpvote: boolean) => {
     if (!socket || !isConnected) return;
     socket.emit("vote", {
       roomId: id,

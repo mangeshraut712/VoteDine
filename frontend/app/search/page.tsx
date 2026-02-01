@@ -5,11 +5,25 @@ import { useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, MapPin } from "lucide-react";
+import Image from "next/image";
+
+interface Restaurant {
+  id: string;
+  name: string;
+  image_url: string;
+  rating: number;
+  location: {
+    address1: string;
+    city: string;
+  };
+  categories: Array<{ title: string }>;
+  price: string;
+}
 
 function SearchResults() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q");
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<Restaurant[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -51,13 +65,15 @@ function SearchResults() {
             >
               <div className="h-48 bg-gray-200 relative">
                 {restaurant.image_url && (
-                  <img
+                  <Image
                     src={restaurant.image_url}
                     alt={restaurant.name}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
                 )}
-                <div className="absolute top-2 right-2">
+                <div className="absolute top-2 right-2 z-10">
                   <Badge className="bg-white/90 text-gray-900">
                     {restaurant.rating}{" "}
                     <Star className="inline w-3 h-3 fill-yellow-400 text-yellow-400 ml-1" />

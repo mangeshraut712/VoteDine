@@ -60,8 +60,8 @@ export async function calendarRoutes(fastify: FastifyInstance) {
       );
 
       return reply.send(result);
-    } catch (error: any) {
-      fastify.log.error(error, 'Failed to sync calendar:');
+    } catch (error) {
+      fastify.log.error(error as unknown, 'Failed to sync calendar:');
       return reply.code(500).send({ error: 'Failed to sync calendar' });
     }
   });
@@ -95,8 +95,8 @@ export async function calendarRoutes(fastify: FastifyInstance) {
       await calendarService.disconnectCalendar(userId, provider as CalendarProvider);
 
       return reply.send({ success: true });
-    } catch (error: any) {
-      fastify.log.error(error, 'Failed to disconnect calendar:');
+    } catch (error) {
+      fastify.log.error(error as unknown, 'Failed to disconnect calendar:');
       return reply.code(500).send({ error: 'Failed to disconnect calendar' });
     }
   });
@@ -164,8 +164,8 @@ export async function calendarRoutes(fastify: FastifyInstance) {
       );
 
       return reply.send(result);
-    } catch (error: any) {
-      fastify.log.error(error, 'Failed to create calendar event:');
+    } catch (error) {
+      fastify.log.error(error as unknown, 'Failed to create calendar event:');
       return reply.code(500).send({ error: 'Failed to create calendar event' });
     }
   });
@@ -217,8 +217,8 @@ export async function calendarRoutes(fastify: FastifyInstance) {
       const events = await calendarService.getUpcomingEvents(userId);
 
       return reply.send({ events });
-    } catch (error: any) {
-      fastify.log.error(error, 'Failed to list calendars:');
+    } catch (error) {
+      fastify.log.error(error as unknown, 'Failed to list calendars:');
       return reply.code(500).send({ error: 'Failed to list calendars' });
     }
   });
@@ -255,7 +255,7 @@ export async function calendarRoutes(fastify: FastifyInstance) {
         lastSync: integration?.lastSyncAt
       });
     } catch (error) {
-      fastify.log.error(error);
+      fastify.log.error(error as unknown);
       return reply.code(500).send({ error: 'Failed to get calendar status' });
     }
   });

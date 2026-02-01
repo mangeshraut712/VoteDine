@@ -5,8 +5,7 @@ import {
   CalendarSyncRequest,
   CalendarSyncResponse,
   CalendarEventStatus,
-  CalendarReminder,
-  AttendeeStatus
+  CalendarReminder
 } from '../types/calendar.js';
 
 export class CalendarService {
@@ -214,7 +213,6 @@ export class CalendarService {
     return this.getCalendarEvents(userId, now, endDate);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async getUserCalendarIntegration(_userId: number, _provider: CalendarProvider) {
     return null; // For now
   }

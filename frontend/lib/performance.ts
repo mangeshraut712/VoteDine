@@ -32,8 +32,11 @@ export function usePerformanceMonitor() {
                     setMetrics((prev) => ({ ...prev, fid: fidEntry.processingStart - fidEntry.startTime }));
                 }
 
-                if (entry.entryType === "layout-shift" && !(entry as any).hadRecentInput) {
-                    setMetrics((prev) => ({ ...prev, cls: (prev.cls || 0) + (entry as any).value }));
+                if (entry.entryType === "layout-shift") {
+                    const lsEntry = entry as PerformanceEntry & { hadRecentInput: boolean; value: number };
+                    if (!lsEntry.hadRecentInput) {
+                        setMetrics((prev) => ({ ...prev, cls: (prev.cls || 0) + lsEntry.value }));
+                    }
                 }
             }
         });

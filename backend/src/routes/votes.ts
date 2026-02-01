@@ -11,7 +11,7 @@ const voteSchema = z.object({
 async function authenticate(request: FastifyRequest, _reply: FastifyReply) {
   try {
     await request.jwtVerify();
-  } catch (_err) {
+  } catch {
     // For votes, we might allow non-authenticated users in some cases
     // but we still want to try to identify them
   }

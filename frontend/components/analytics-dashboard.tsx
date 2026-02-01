@@ -144,7 +144,7 @@ export default function AnalyticsDashboard() {
   }
 
   const stats: Array<{
-    icon: any;
+    icon: React.ElementType;
     label: string;
     value: string | number;
     change?: number;
@@ -163,7 +163,7 @@ export default function AnalyticsDashboard() {
             : data.trends.roomsChange < 0
               ? "down"
               : "neutral"
-          : undefined) as any,
+          : undefined) as "up" | "down" | "neutral" | undefined,
       },
       {
         icon: TrendingUp,
@@ -184,7 +184,7 @@ export default function AnalyticsDashboard() {
             : data.trends.votesChange < 0
               ? "down"
               : "neutral"
-          : undefined) as any,
+          : undefined) as "up" | "down" | "neutral" | undefined,
       },
       {
         icon: Utensils,

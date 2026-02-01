@@ -84,11 +84,11 @@ export async function recommendationRoutes(
             id: r.id.toString(),
             name: r.name,
             cuisine: r.cuisine || "Mixed",
-            price: (r.price as any) || "$$",
+            price: (r.price as Recommendation["price"]) || "$$",
             vibe: (r.cuisine?.toLowerCase().includes("bistro") ? "celebrate" :
               r.cuisine?.toLowerCase().includes("mediterranean") ? "healthy" :
-                r.cuisine?.toLowerCase().includes("fusion") ? "adventurous" : "cozy") as any,
-            tags: (r.cuisine?.toLowerCase().includes("mediterranean") ? ["vegetarian", "gluten-free"] : []) as any,
+                r.cuisine?.toLowerCase().includes("fusion") ? "adventurous" : "cozy") as Recommendation["vibe"],
+            tags: (r.cuisine?.toLowerCase().includes("mediterranean") ? ["vegetarian", "gluten-free"] : []) as Recommendation["tags"],
             bestFor: ["lunch", "dinner"],
             description: `A highly rated ${r.cuisine} restaurant with ${r.rating} stars.`
           };
