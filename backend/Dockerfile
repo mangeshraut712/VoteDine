@@ -1,4 +1,4 @@
-FROM node:22.12-alpine AS base
+FROM node:22-alpine AS base
 
 # Install dependencies stage
 FROM base AS dependencies
@@ -47,6 +47,16 @@ COPY --from=builder /app/dist ./dist
 
 # Create logs directory
 RUN mkdir -p logs
+
+# Remove the Node-bundled npm CLI from the runtime image. It is not used by
+# the Fastify process and Trivy otherwise reports CVEs in npm's nested deps.
+RUN rm -rf \
+  /usr/local/lib/node_modules/npm \
+  /usr/local/lib/node_modules/corepack \
+  /usr/local/bin/npm \
+  /usr/local/bin/npx \
+  /usr/local/bin/corepack \
+  /root/.npm
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs
