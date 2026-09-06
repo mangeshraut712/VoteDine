@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import AIRecommendations from "@/components/ai-recommendations";
+import { demoRecommendations, isDemoMode } from "@/lib/demo";
 
 interface Recommendation {
   restaurantId: number;
@@ -19,6 +20,10 @@ export default function AIRecommendationsPage() {
   const fetchRecommendations = async () => {
     setIsLoading(true);
     try {
+      if (isDemoMode) {
+        setRecommendations(demoRecommendations);
+        return;
+      }
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recommendations`);
       if (response.ok) {
         const data = await response.json();
@@ -45,8 +50,7 @@ export default function AIRecommendationsPage() {
       }
     } catch (error) {
       console.error("Failed to fetch recommendations:", error);
-      // Show empty state instead of fallback data
-      setRecommendations([]);
+      setRecommendations(isDemoMode ? demoRecommendations : []);
     } finally {
       setIsLoading(false);
     }

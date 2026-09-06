@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, MapPin } from "lucide-react";
 import Image from "next/image";
+import { demoRestaurants, isDemoMode } from "@/lib/demo";
 
 interface Restaurant {
   id: string;
@@ -31,6 +32,19 @@ function SearchResults() {
       const search = async () => {
         setIsLoading(true);
         try {
+          if (isDemoMode) {
+            const needle = query.toLowerCase();
+            setResults(
+              demoRestaurants.filter(
+                (restaurant) =>
+                  restaurant.name.toLowerCase().includes(needle) ||
+                  restaurant.categories.some((category) =>
+                    category.title.toLowerCase().includes(needle)
+                  )
+              )
+            );
+            return;
+          }
           const response = await fetch(
             `/api/restaurants/search?term=${encodeURIComponent(query)}&location=Philadelphia`,
           );
