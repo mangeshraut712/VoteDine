@@ -16,6 +16,7 @@ import {
   Minus,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { demoAnalytics, isDemoMode } from "@/lib/demo";
 
 interface AnalyticsData {
   totalRooms: number;
@@ -38,6 +39,9 @@ interface AnalyticsData {
 }
 
 const fetchAnalytics = async (): Promise<AnalyticsData> => {
+  if (isDemoMode) {
+    return demoAnalytics;
+  }
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/overview`);
   if (!res.ok) throw new Error("Failed to fetch analytics");
   const json = await res.json();

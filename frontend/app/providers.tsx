@@ -5,6 +5,7 @@ import { useState } from "react";
 import { LanguageProvider } from "@/lib/i18n";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import DemoBanner from "@/components/demo-banner";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -23,6 +24,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <div className="flex flex-col min-h-screen">
+          <DemoBanner />
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />

@@ -1,6 +1,35 @@
-# 🍽️ VoteDine
+# VoteDine
 
-> VoteDine is a modern, real-time group dining platform built with 2026 web technologies
+**Live demo:** [https://mangeshraut712.github.io/VoteDine/](https://mangeshraut712.github.io/VoteDine/)
+
+VoteDine helps a group decide where to eat. Create a room, add restaurants, vote in real time, and use AI picks, analytics, calendar export, and sharing when the API is running.
+
+The GitHub Pages site is a **static demo** of the Next.js frontend (no backend secrets). Full voting, Yelp search, and sockets need the local stack below.
+
+## How to run
+
+```bash
+cp .env.example .env
+docker-compose up -d
+```
+
+Then open:
+
+- App: `http://localhost:3000`
+- API: `http://localhost:3001`
+- API docs: `http://localhost:3001/docs`
+
+Without Docker:
+
+```bash
+make db-up
+make install
+cd backend && npm run db:migrate && npm run db:seed
+# terminal 1
+cd backend && npm run dev
+# terminal 2
+cd frontend && npm run dev
+```
 
 <div align="center">
 
@@ -15,9 +44,9 @@
 
 </div>
 
-## 🎯 Overview
+## Overview
 
-Help your friends and family decide where to eat! This application revolutionizes group restaurant decision-making with real-time voting, live chat, and intelligent restaurant discovery. Built with cutting-edge 2026 technologies for maximum performance and scalability.
+Group restaurant decisions with real-time voting, live updates, and restaurant discovery. Docker Compose runs Postgres, Redis, the Fastify API, and the Next.js UI.
 
 ## ✨ Key Features
 
@@ -110,47 +139,18 @@ Help your friends and family decide where to eat! This application revolutionize
 - **Request Logging**: Automatic logging with slow request detection (>1s)
 - **Health Check**: Database connectivity status
 
-## 🚀 Quick Start (Docker)
+## GitHub Pages demo
 
-1) Copy env template
+The workflow `.github/workflows/github-pages.yml` exports the frontend with `GITHUB_PAGES=true` and `NEXT_PUBLIC_DEMO_MODE=true`. It does **not** inject `JWT_SECRET`, `YELP_API_KEY`, database URLs, or other backend secrets.
 
-```bash
-cp .env.example .env
-```
-
-2) Update API keys and secrets in `.env`
-
-3) Start the stack
+Local static export:
 
 ```bash
-docker-compose up -d
+cd frontend
+GITHUB_PAGES=true NEXT_PUBLIC_BASE_PATH=/VoteDine NEXT_PUBLIC_DEMO_MODE=true npm run build
 ```
 
-4) Open
-
-- Frontend: `http://localhost:3000`
-- Backend API: `http://localhost:3001`
-- API docs: `http://localhost:3001/docs`
-
-## 💻 Local Development (no full Docker stack)
-
-```bash
-# Start databases only
-make db-up
-
-# Install deps (root, frontend, backend)
-make install
-
-# Run migrations
-cd backend && npm run db:migrate
-
-# Optionally seed sample data
-cd backend && npm run db:seed
-
-# Run backend and frontend in separate terminals
-cd backend && npm run dev
-cd frontend && npm run dev
-```
+Output is in `frontend/out`.
 
 ## 🔧 Environment Variables
 

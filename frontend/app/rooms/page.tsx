@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Users, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DEMO_ROOM_ID, isDemoMode } from "@/lib/demo";
 
 export default function RoomsPage() {
   const [roomName, setRoomName] = useState("");
@@ -19,6 +20,11 @@ export default function RoomsPage() {
 
     setIsLoading(true);
     try {
+      if (isDemoMode) {
+        router.push(`/rooms/${DEMO_ROOM_ID}`);
+        return;
+      }
+
       const response = await fetch("/api/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -39,7 +45,7 @@ export default function RoomsPage() {
   const handleJoinRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!joinCode.trim()) return;
-    router.push(`/rooms/${joinCode.toUpperCase()}`);
+    router.push(`/rooms/${isDemoMode ? DEMO_ROOM_ID : joinCode.toUpperCase()}`);
   };
 
   return (
@@ -129,7 +135,7 @@ export default function RoomsPage() {
               </div>
               <Button
                 type="submit"
-                disabled={joinCode.length < 8}
+                disabled={isDemoMode ? !joinCode.trim() : joinCode.length < 8}
                 className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-xl"
               >
                 <ArrowRight className="w-5 h-5 mr-2" />
@@ -142,7 +148,9 @@ export default function RoomsPage() {
           <p className="text-center text-sm text-gray-400 mt-6">
             {activeTab === "create"
               ? "You'll get a shareable code after creating the room."
-              : "Ask the room creator for the 8-character code."}
+              : isDemoMode
+                ? "This Pages demo opens a sample room. Run the local stack for live codes."
+                : "Ask the room creator for the 8-character code."}
           </p>
         </div>
       </div>
