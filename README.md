@@ -6,6 +6,16 @@ VoteDine helps a group decide where to eat. Create a room, add restaurants, vote
 
 The GitHub Pages site is a **static demo** of the Next.js frontend (no backend secrets). Full voting, Yelp search, and sockets need the local stack below.
 
+## Product screenshots
+
+![VoteDine home](docs/screenshots/01-home.png)
+
+*Home — landing page for creating rooms and exploring VoteDine’s dining tools.*
+
+![VoteDine voting room](docs/screenshots/02-feature.png)
+
+*Voting room — restaurant options, vote counts, and participants in a live demo session.*
+
 ## How to run
 
 ```bash
