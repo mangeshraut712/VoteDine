@@ -36,11 +36,12 @@ RUN apk update && apk upgrade --no-cache
 
 # Install only production dependencies
 COPY package.json package-lock.json* ./
-RUN npm install --omit=dev && npm cache clean --force
+RUN npm install --omit=dev --omit=optional && npm cache clean --force
 
-# Copy Prisma schema and generate client
-COPY prisma ./prisma/
-RUN npx prisma generate
+# Use the client generated in the builder so the Prisma CLI (and
+# deepmerge-ts) is not present in the runtime image.
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 # Copy built files
 COPY --from=builder /app/dist ./dist
