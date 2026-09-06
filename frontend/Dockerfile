@@ -1,5 +1,5 @@
 # Multi-stage build for production
-FROM node:22.12-alpine AS base
+FROM node:22-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -32,6 +32,15 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 # Upgrade system packages to fix security vulnerabilities
 RUN apk update && apk upgrade --no-cache
+
+# Runtime image does not need npm; drop it to avoid scanning unused toolchain CVEs
+RUN rm -rf \
+    /usr/local/lib/node_modules/npm \
+    /usr/local/lib/node_modules/corepack \
+    /usr/local/bin/npm \
+    /usr/local/bin/npx \
+    /usr/local/bin/corepack \
+    /root/.npm
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
