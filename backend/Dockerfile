@@ -21,7 +21,7 @@ COPY package.json package-lock.json* tsconfig.json ./
 COPY prisma ./prisma/
 COPY src ./src/
 
-RUN npm install
+RUN npm ci
 RUN npx prisma generate
 RUN npm run build
 
@@ -36,7 +36,7 @@ RUN apk update && apk upgrade --no-cache
 
 # Install only production dependencies
 COPY package.json package-lock.json* ./
-RUN npm install --omit=dev --omit=optional && npm cache clean --force
+RUN npm ci --omit=dev --omit=optional && npm cache clean --force
 
 # Use the client generated in the builder so the Prisma CLI (and
 # deepmerge-ts) is not present in the runtime image.
