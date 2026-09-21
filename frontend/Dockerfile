@@ -1,16 +1,16 @@
 # Multi-stage build for production
-FROM node:22-alpine AS base
+FROM node:22-bookworm-slim AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-# Upgrade system packages to fix security vulnerabilities
-RUN apk update && apk upgrade --no-cache && \
-    apk add --no-cache libc6-compat
+RUN apt-get update && apt-get upgrade -y && \
+  apt-get install -y --no-install-recommends ca-certificates && \
+  rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
+# Prefer lockfile when present; legacy-peer-deps avoids vitest/vite peer conflicts
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -30,10 +30,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Upgrade system packages to fix security vulnerabilities
-RUN apk update && apk upgrade --no-cache
+RUN apt-get update && apt-get upgrade -y && \
+  rm -rf /var/lib/apt/lists/*
 
-# Runtime image does not need npm; drop it to avoid scanning unused toolchain CVEs
 RUN rm -rf \
     /usr/local/lib/node_modules/npm \
     /usr/local/lib/node_modules/corepack \
@@ -42,14 +41,12 @@ RUN rm -rf \
     /usr/local/bin/corepack \
     /root/.npm
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN groupadd --system --gid 1001 nodejs && \
+  useradd --system --uid 1001 --gid nodejs nextjs
 
-# Set the correct permission for prerender cache
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
 
-# Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
