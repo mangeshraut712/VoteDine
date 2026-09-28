@@ -6,15 +6,21 @@ VoteDine helps a group decide where to eat. Create a room, add restaurants, vote
 
 The GitHub Pages site is a **static demo** of the Next.js frontend (no backend secrets). Full voting, Yelp search, and sockets need the local stack below.
 
-## Product screenshots
+## Screenshots
 
-![VoteDine home](docs/screenshots/01-home.png)
+Framed captures of the live app (current UI).
 
-*Home — landing page for creating rooms and exploring VoteDine’s dining tools.*
+<div align="center">
 
-![VoteDine voting room](docs/screenshots/02-feature.png)
+<img src="docs/screenshots/01-home.webp" alt="VoteDine home — dinner decided" width="720" />
 
-*Voting room — restaurant options, vote counts, and participants in a live demo session.*
+<img src="docs/screenshots/02-voting.webp" alt="VoteDine voting room" width="720" />
+
+<img src="docs/screenshots/03-analytics.webp" alt="VoteDine analytics dashboard" width="720" />
+
+<img src="docs/screenshots/04-ai-picks.webp" alt="VoteDine AI picks and room create" width="720" />
+
+</div>
 
 ## How to run
 
