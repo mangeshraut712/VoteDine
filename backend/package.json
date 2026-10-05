@@ -28,7 +28,7 @@
     "axios": "^1.13.5",
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.7",
-    "fastify": "^5.8.1",
+    "fastify": "^5.12.5",
     "globals": "^14.0.0",
     "ioredis": "^5.4.2",
     "socket.io": "^4.8.1",
