@@ -153,3 +153,6 @@ dump.rdb
 # Playwright
 test-results/
 playwright-report/
+# Local agent tooling
+.agents/
+skills-lock.json
