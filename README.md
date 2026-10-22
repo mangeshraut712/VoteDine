@@ -8,6 +8,10 @@ The GitHub Pages site is a **static demo** of the Next.js frontend (no backend s
 
 ## Screenshots
 
+Unframed capture of the [live demo](https://mangeshraut712.github.io/VoteDine/) home page, taken with headless Chromium on 22 October 2026:
+
+<p align="center"><img src="docs/screenshots/live-home.webp" alt="VoteDine live demo home page" width="720" /></p>
+
 Framed captures of the live app (current UI).
 
 <div align="center">
@@ -64,72 +68,72 @@ cd frontend && npm run dev
 
 Group restaurant decisions with real-time voting, live updates, and restaurant discovery. Docker Compose runs Postgres, Redis, the Fastify API, and the Next.js UI.
 
-## ✨ Key Features
+## Key Features
 
-### 🏠 Room Management
+### Room Management
 - **Instant Room Creation**: Generate unique room codes in seconds
 - **Guest Support**: Join without registration
 - **Room Preferences**: Set cuisine, price range, and location filters
 - **Persistent Sessions**: Keep rooms active until closed
 
-### 🔍 Restaurant Discovery
+### Restaurant Discovery
 - **Yelp Integration**: Access millions of restaurants with real data
 - **Smart Filtering**: Filter by cuisine, price, rating, and location
 - **Google Maps**: Visual restaurant locations and directions
 - **Search Suggestions**: AI-powered restaurant recommendations
 
-### 🤖 AI Recommendations
+### AI Recommendations
 - **VoteDine AI**: Personalized picks tuned to group vibe and budget
 - **Preference Learning**: Learns from past votes and cuisines
 - **Confidence Scoring**: See why each pick matches the group
 
-### 🎙️ Voice Commands
+### Voice Commands
 - **Hands-Free Control**: Create rooms, search cuisines, and view analytics by voice
 - **Live Transcripts**: See recognized commands in real time
 
-### 📅 Calendar Integration
+### Calendar Integration
 - **One-Click Add**: Export winning restaurants to Google, Apple, or Outlook calendars
 - **Event Templates**: Auto-fill time, location, and attendee notes
 
-### 📊 Analytics Dashboard
+### Analytics Dashboard
 - **Voting Insights**: Track top cuisines, active rooms, and vote momentum
 - **Trend Lines**: Visualize vote spikes across the week
 
-### 🔗 Social Sharing
+### Social Sharing
 - **Share Links**: Invite friends with a single tap
 - **Native Share**: Use device share sheets for faster invites
 
-### 📱 Offline & Mobile
+### Offline & Mobile
 - **PWA Ready**: Offline-first support with installable web app
 - **Mobile App Scaffold**: React Native structure included for iOS and Android
 - **Multi-Language UI**: English, Spanish, and French built in
 
-### ⭐ Real-Time Voting
+### Real-Time Voting
 - **Live Vote Updates**: See votes appear instantly across all devices
 - **Vote Analytics**: Real-time voting statistics and leaderboards
 - **Vote History**: Track voting patterns and preferences
 - **Anonymous Options**: Vote as guest or authenticated user
 
-### 💬 Live Chat
+### Live Chat
 - **Room Chat**: Discuss restaurant options with your group
 - **Real-Time Messaging**: Instant message delivery
 - **User Identification**: See who's saying what
 - **Message History**: Keep chat logs for reference
 
-### 🔐 Modern Authentication
+### Modern Authentication
 - **JWT Security**: Secure, stateless authentication
 - **Social Login Ready**: Easy integration with OAuth providers
 - **Guest Access**: Full functionality without registration
 - **Profile Management**: Save preferences and voting history
 
-## 🏗️ Repository Layout
+## Repository Layout
 
 - `frontend/` - Next.js 15 App Router UI
 - `backend/` - Fastify 5 API server
 - `docker-compose.yml` - Local Postgres, Redis, API, and UI
 - `docs/` - Architecture notes and migration references
 
-## 🚀 What is Implemented
+## What is Implemented
 
 - Room creation and join by 8-character code
 - Restaurant search via Yelp (if `YELP_API_KEY` is set) with database fallback
@@ -139,7 +143,7 @@ Group restaurant decisions with real-time voting, live updates, and restaurant d
 - Calendar events stored in database
 - Swagger/OpenAPI docs at `http://localhost:3001/docs`
 
-## 🔒️ Security Features
+## Security Features
 
 - **Rate Limiting**: 100 requests per minute per IP
 - **Security Headers**: 
@@ -168,7 +172,7 @@ GITHUB_PAGES=true NEXT_PUBLIC_BASE_PATH=/VoteDine NEXT_PUBLIC_DEMO_MODE=true npm
 
 Output is in `frontend/out`.
 
-## 🔧 Environment Variables
+## Environment Variables
 
 See `.env.example` for the full list. Common variables:
 
@@ -185,7 +189,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 NEXT_PUBLIC_SOCKET_URL=http://localhost:3001
 ```
 
-## 🛠️ Useful Scripts
+## Useful Scripts
 
 Root (from `package.json`):
 
@@ -209,7 +213,7 @@ make db-migrate
 make test
 ```
 
-## 📚 API Overview
+## API Overview
 
 The API is mounted under `/api` and documented in Swagger at `/docs`. Key routes include:
 
@@ -225,7 +229,7 @@ The API is mounted under `/api` and documented in Swagger at `/docs`. Key routes
 
 Socket.io events are handled in `backend/src/socket/handlers.ts`.
 
-## 📝 Notes
+## Notes
 
 - The frontend uses Next.js 15 with Tailwind CSS 3 and Radix UI primitives.
 - Docker builds use Next.js standalone output (`output: 'standalone'`).
@@ -233,7 +237,7 @@ Socket.io events are handled in `backend/src/socket/handlers.ts`.
 - All errors are logged with request context (method, URL, IP, user-agent).
 - Slow requests (>1s) trigger warning logs.
 
-## 🤝 Contributing
+## Contributing
 
 1) Create a feature branch
 2) Make your changes
