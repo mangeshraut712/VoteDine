@@ -33,7 +33,7 @@ export default function ShareActions() {
     if (platform === "Copy Link") {
       handleCopyLink();
     } else if (shareUrls[platform]) {
-      window.open(shareUrls[platform], "_blank");
+      window.open(shareUrls[platform], "_blank", "noopener,noreferrer");
     }
   };
 
@@ -86,6 +86,7 @@ export default function ShareActions() {
           size="sm"
           variant="ghost"
           onClick={handleCopyLink}
+          aria-label={copied ? "Link copied" : "Copy link"}
           className="shrink-0"
         >
           {copied ? (

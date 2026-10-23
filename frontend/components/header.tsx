@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useI18n, type Locale } from "@/lib/i18n";
 import {
   Menu,
   X,
@@ -30,21 +31,21 @@ const navLinks = [
   { href: "/share", label: "Share", icon: Share2 },
 ];
 
-const languages = [
-  { code: "en", label: "EN", name: "English" },
-  { code: "es", label: "ES", name: "Español" },
-  { code: "fr", label: "FR", name: "Français" },
-  { code: "de", label: "DE", name: "Deutsch" },
-  { code: "hi", label: "HI", name: "हिन्दी" },
-];
+const localeNames: Record<Locale, string> = {
+  en: "English",
+  es: "Español",
+  fr: "Français",
+};
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
-  const [currentLang, setCurrentLang] = useState("en");
+  const [searchQuery, setSearchQuery] = useState("");
   const pathname = usePathname();
+  const router = useRouter();
+  const { locale, setLocale, supportedLocales } = useI18n();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -61,6 +62,15 @@ export default function Header() {
   }, [pathname]);
 
   const isActive = (href: string) => pathname === href;
+
+  const submitSearch = (event: React.FormEvent) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    if (!query) return;
+    setSearchOpen(false);
+    setMobileMenuOpen(false);
+    router.push(`/search?q=${encodeURIComponent(query)}`);
+  };
 
   return (
     <header
@@ -110,21 +120,28 @@ export default function Header() {
             {/* Search */}
             <div className="relative">
               {searchOpen ? (
-                <div className="flex items-center gap-2 animate-scale-in">
+                <form onSubmit={submitSearch} className="flex items-center gap-2 animate-scale-in" role="search">
                   <Input
                     type="search"
+                    name="q"
+                    aria-label="Search restaurants"
                     placeholder="Search restaurants..."
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
                     className="w-64 pl-10 pr-4 py-2 rounded-lg border-gray-200 focus:border-orange-300"
                     autoFocus
                     onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
                   />
                   <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                </div>
+                </form>
               ) : (
                 <Button
+                  type="button"
                   variant="ghost"
                   size="sm"
                   onClick={() => setSearchOpen(true)}
+                  aria-label="Search restaurants"
+                  aria-expanded={searchOpen}
                   className="text-gray-600 hover:text-gray-900"
                 >
                   <Search className="w-5 h-5" />
@@ -135,33 +152,39 @@ export default function Header() {
             {/* Language Selector */}
             <div className="relative">
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 onClick={() => setLangMenuOpen(!langMenuOpen)}
+                aria-haspopup="menu"
+                aria-expanded={langMenuOpen}
+                aria-label="Choose language"
                 className="flex items-center gap-1 text-gray-600 hover:text-gray-900"
               >
                 <Globe className="w-4 h-4" />
                 <span className="text-sm font-medium">
-                  {languages.find((l) => l.code === currentLang)?.label}
+                  {locale.toUpperCase()}
                 </span>
                 <ChevronDown className="w-3 h-3" />
               </Button>
 
               {langMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 animate-scale-in">
-                  {languages.map((lang) => (
+                <div role="menu" className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 animate-scale-in">
+                  {supportedLocales.map((code) => (
                     <button
-                      key={lang.code}
+                      key={code}
+                      type="button"
+                      role="menuitem"
                       onClick={() => {
-                        setCurrentLang(lang.code);
+                        setLocale(code);
                         setLangMenuOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${currentLang === lang.code
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${locale === code
                           ? "text-orange-600 font-medium"
                           : "text-gray-700"
                         }`}
                     >
-                      {lang.name}
+                      {localeNames[code]}
                     </button>
                   ))}
                 </div>
@@ -189,7 +212,7 @@ export default function Header() {
               </Button>
             </Link>
 
-            <Link href="/profile">
+            <Link href="/login" aria-label="Account">
               <Button
                 variant="ghost"
                 size="sm"
@@ -204,9 +227,12 @@ export default function Header() {
 
           {/* Mobile Menu Button */}
           <button
+            type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
             aria-label="Toggle menu"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-navigation"
           >
             {mobileMenuOpen ? (
               <X className="w-6 h-6" />
@@ -219,19 +245,22 @@ export default function Header() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-gray-100 bg-white animate-slide-up">
+        <div id="mobile-navigation" className="lg:hidden border-t border-gray-100 bg-white animate-slide-up">
           <div className="container mx-auto px-4 py-4">
-            {/* Mobile Search */}
-            <div className="mb-4">
+            <form onSubmit={submitSearch} className="mb-4" role="search">
               <div className="relative">
                 <Input
                   type="search"
+                  name="q"
+                  aria-label="Search restaurants"
                   placeholder="Search restaurants..."
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
                   className="w-full pl-10 pr-4 py-2 rounded-lg border-gray-200"
                 />
                 <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
               </div>
-            </div>
+            </form>
 
             {/* Mobile Navigation */}
             <nav className="space-y-1 mb-4">
@@ -283,16 +312,18 @@ export default function Header() {
                 <span className="font-medium">Language</span>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                {languages.map((lang) => (
+                {supportedLocales.map((code) => (
                   <button
-                    key={lang.code}
-                    onClick={() => setCurrentLang(lang.code)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${currentLang === lang.code
+                    key={code}
+                    type="button"
+                    onClick={() => setLocale(code)}
+                    aria-pressed={locale === code}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${locale === code
                         ? "bg-orange-500 text-white"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
                   >
-                    {lang.label}
+                    {code.toUpperCase()}
                   </button>
                 ))}
               </div>

@@ -34,6 +34,10 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 60,
+    remotePatterns: [
+      { protocol: "https", hostname: "**.yelpcdn.com" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+    ],
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
@@ -73,7 +77,7 @@ const nextConfig: NextConfig = {
                 },
                 {
                   key: "Permissions-Policy",
-                  value: "camera=(), microphone=(), geolocation=()",
+                  value: "camera=(), microphone=(self), geolocation=()",
                 },
               ],
             },
@@ -83,7 +87,7 @@ const nextConfig: NextConfig = {
                 { key: "Access-Control-Allow-Credentials", value: "true" },
                 {
                   key: "Access-Control-Allow-Origin",
-                  value: process.env.FRONTEND_URL || "*",
+                  value: process.env.FRONTEND_URL || "http://localhost:3000",
                 },
                 {
                   key: "Access-Control-Allow-Methods",

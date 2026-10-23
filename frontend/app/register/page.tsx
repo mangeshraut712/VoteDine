@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,33 +12,99 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import Link from "next/link";
+import { authenticateRequest, saveAuthToken } from "@/lib/auth-client";
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      const result = await authenticateRequest("/api/users/register", { username, password });
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      saveAuthToken(window.sessionStorage, result.token);
+      router.push("/rooms");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-16 flex justify-center">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Create Account</CardTitle>
+          <CardTitle className="text-2xl text-center">
+            <h1>Create Account</h1>
+          </CardTitle>
           <CardDescription className="text-center">
             Join VoteDine and start deciding together
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Username</label>
-              <Input placeholder="johndoe" />
+              <label htmlFor="username" className="text-sm font-medium">Username</label>
+              <Input
+                id="username"
+                name="username"
+                autoComplete="username"
+                placeholder="yourname"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                required
+                minLength={3}
+                maxLength={50}
+              />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
-              <Input type="email" placeholder="you@example.com" />
+              <label htmlFor="password" className="text-sm font-medium">Password</label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                minLength={6}
+                maxLength={72}
+              />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Password</label>
-              <Input type="password" />
+              <label htmlFor="confirmPassword" className="text-sm font-medium">Confirm password</label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                required
+                minLength={6}
+                maxLength={72}
+              />
             </div>
-            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-              Sign Up
+            {error && (
+              <p role="alert" className="text-sm text-red-600">
+                {error}
+              </p>
+            )}
+            <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+              {isSubmitting ? "Creating account..." : "Sign Up"}
             </Button>
             <div className="text-center text-sm text-gray-500">
               Already have an account?{" "}

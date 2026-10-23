@@ -1,12 +1,28 @@
 import { FastifyInstance } from 'fastify';
+import { z } from 'zod';
 import { CalendarService } from '../services/calendar.js';
-import { CalendarProvider } from '../types/calendar';
+import { CalendarProvider } from '../types/calendar.js';
+import { getAuthUserId } from '../lib/auth-user.js';
+import { roomLookupFilter } from '../lib/room-code.js';
+import { authenticate } from '../middleware/authenticate.js';
+
+const eventBodySchema = z.object({
+  roomId: z.string().trim().min(1).max(64),
+  startTime: z.string().datetime(),
+  endTime: z.string().datetime(),
+  title: z.string().trim().min(1).max(200),
+  description: z.string().trim().max(2000).optional(),
+  location: z.string().trim().max(500).optional(),
+}).refine((value) => new Date(value.endTime).getTime() > new Date(value.startTime).getTime(), {
+  message: 'endTime must be after startTime',
+});
 
 export async function calendarRoutes(fastify: FastifyInstance) {
   const calendarService = CalendarService.getInstance(fastify.prisma);
 
   // POST /connect - Connect user's calendar
   fastify.post('/connect', {
+    preHandler: [authenticate],
     schema: {
       description: 'Connect user\'s calendar account',
       tags: ['Calendar'],
@@ -41,7 +57,7 @@ export async function calendarRoutes(fastify: FastifyInstance) {
     }
   }, async (request, reply) => {
     try {
-      const userId = request.user?.id; // Get from JWT token
+      const userId = getAuthUserId(request.user);
       const { provider, accessToken, refreshToken } = request.body as {
         provider: string;
         accessToken: string;
@@ -68,6 +84,7 @@ export async function calendarRoutes(fastify: FastifyInstance) {
 
   // POST /disconnect - Disconnect user's calendar
   fastify.post('/disconnect', {
+    preHandler: [authenticate],
     schema: {
       description: 'Disconnect user\'s calendar account',
       tags: ['Calendar'],
@@ -85,7 +102,7 @@ export async function calendarRoutes(fastify: FastifyInstance) {
     }
   }, async (request, reply) => {
     try {
-      const userId = request.user?.id;
+      const userId = getAuthUserId(request.user);
       const { provider } = request.body as { provider: string };
 
       if (!userId) {
@@ -103,6 +120,7 @@ export async function calendarRoutes(fastify: FastifyInstance) {
 
   // POST /events - Create dining event
   fastify.post('/events', {
+    preHandler: [authenticate],
     schema: {
       description: 'Create calendar event for dining session',
       tags: ['Calendar'],
@@ -143,27 +161,40 @@ export async function calendarRoutes(fastify: FastifyInstance) {
     }
   }, async (request, reply) => {
     try {
-      const userId = request.user?.id;
-      const eventData = request.body as {
-        roomId: string;
-        restaurantName: string;
-        diningTime: string;
-        provider: CalendarProvider;
-      };
-
+      const userId = getAuthUserId(request.user);
+      const parsed = eventBodySchema.safeParse(request.body);
       if (!userId) {
         return reply.code(401).send({ error: 'Authentication required' });
       }
+      if (!parsed.success) {
+        return reply.code(400).send({ error: 'Invalid event', errors: parsed.error.issues });
+      }
 
-      const result = await calendarService.createDiningEvent(
+      const room = await fastify.prisma.room.findFirst({
+        where: roomLookupFilter(parsed.data.roomId),
+      });
+      if (!room) {
+        return reply.code(404).send({ error: 'Room not found' });
+      }
+
+      const result = await calendarService.createCalendarEvent(
         userId,
-        eventData.roomId,
-        eventData.restaurantName,
-        new Date(eventData.diningTime),
-        eventData.provider
+        parsed.data.title,
+        new Date(parsed.data.startTime),
+        new Date(parsed.data.endTime),
+        CalendarProvider.GOOGLE,
+        {
+          description: parsed.data.description,
+          location: parsed.data.location,
+          roomId: room.id,
+        }
       );
 
-      return reply.send(result);
+      if (!result) {
+        return reply.code(500).send({ error: 'Failed to create calendar event' });
+      }
+
+      return reply.send({ success: true, eventId: result.id });
     } catch (error) {
       fastify.log.error(error as unknown, 'Failed to create calendar event:');
       return reply.code(500).send({ error: 'Failed to create calendar event' });
@@ -172,6 +203,7 @@ export async function calendarRoutes(fastify: FastifyInstance) {
 
   // GET /events - Get upcoming events
   fastify.get('/events', {
+    preHandler: [authenticate],
     schema: {
       description: 'Get user\'s upcoming dining events',
       tags: ['Calendar'],
@@ -207,10 +239,9 @@ export async function calendarRoutes(fastify: FastifyInstance) {
     }
   }, async (request, reply) => {
     try {
-      // For demo/development purposes, fall back to user 1 if not authenticated
-      const userId = request.user?.id || 1;
+      const userId = getAuthUserId(request.user);
 
-      if (!userId && process.env.NODE_ENV === 'production') {
+      if (!userId) {
         return reply.code(401).send({ error: 'Authentication required' });
       }
 
@@ -225,6 +256,7 @@ export async function calendarRoutes(fastify: FastifyInstance) {
 
   // GET /status - Get calendar integration status
   fastify.get('/status', {
+    preHandler: [authenticate],
     schema: {
       description: 'Get user\'s calendar integration status',
       tags: ['Calendar'],
@@ -241,7 +273,7 @@ export async function calendarRoutes(fastify: FastifyInstance) {
     }
   }, async (request, reply) => {
     try {
-      const userId = request.user?.id;
+      const userId = getAuthUserId(request.user);
 
       if (!userId) {
         return reply.code(401).send({ error: 'Authentication required' });

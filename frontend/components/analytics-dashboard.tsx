@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { demoAnalytics, isDemoMode } from "@/lib/demo";
+import { apiUrl } from "@/lib/api";
+import { barHeightPercent, formatUtcWeekday, trendPercentChange } from "@/lib/analytics";
 
 interface AnalyticsData {
   totalRooms: number;
@@ -42,7 +44,7 @@ const fetchAnalytics = async (): Promise<AnalyticsData> => {
   if (isDemoMode) {
     return demoAnalytics;
   }
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/overview`);
+  const res = await fetch(apiUrl("/api/analytics/overview"));
   if (!res.ok) throw new Error("Failed to fetch analytics");
   const json = await res.json();
   if (!json.success) throw new Error(json.message || "Failed to fetch analytics");
@@ -230,8 +232,12 @@ export default function AnalyticsDashboard() {
         ))}
       </div>
 
-      {/* Voting Trends Chart */}
-      {data?.votingTrends && data.votingTrends.length > 0 && (
+      {(() => {
+        const votingTrends = data?.votingTrends ?? [];
+        const change = trendPercentChange(votingTrends.map((trend) => trend.votes));
+        if (votingTrends.length === 0) return null;
+        const maxVotes = Math.max(...votingTrends.map((trend) => trend.votes));
+        return (
         <Card className="border-0 shadow-lg observe-fade">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-6">
@@ -243,16 +249,20 @@ export default function AnalyticsDashboard() {
                   Daily voting activity over the past week
                 </p>
               </div>
-              <div className="flex items-center gap-2 text-sm text-green-600 font-medium">
-                <TrendingUp className="w-4 h-4" />
-                <span>+12% this week</span>
-              </div>
+              {change !== null && (
+                <div className={`flex items-center gap-2 text-sm font-medium ${change >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  <TrendingUp className="w-4 h-4" />
+                  <span>
+                    {change >= 0 ? "+" : ""}
+                    {change}% this week
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="h-64 flex items-end justify-between gap-2">
-              {data.votingTrends.map((trend, index) => {
-                const maxVotes = Math.max(...data.votingTrends!.map((t) => t.votes));
-                const height = (trend.votes / maxVotes) * 100;
+              {votingTrends.map((trend, index) => {
+                const height = barHeightPercent(trend.votes, maxVotes);
                 return (
                   <div key={trend.date} className="flex-1 flex flex-col items-center gap-2">
                     <div
@@ -268,9 +278,7 @@ export default function AnalyticsDashboard() {
                       </div>
                     </div>
                     <span className="text-xs text-gray-500 font-medium">
-                      {new Date(trend.date).toLocaleDateString("en-US", {
-                        weekday: "short",
-                      })}
+                      {formatUtcWeekday(trend.date)}
                     </span>
                   </div>
                 );
@@ -278,10 +286,14 @@ export default function AnalyticsDashboard() {
             </div>
           </CardContent>
         </Card>
-      )}
+        );
+      })()}
 
-      {/* Top Restaurants */}
-      {data?.topRestaurants && data.topRestaurants.length > 0 && (
+      {(() => {
+        const topRestaurants = data?.topRestaurants ?? [];
+        if (topRestaurants.length === 0) return null;
+        const maxVotes = Math.max(...topRestaurants.map((restaurant) => restaurant.votes));
+        return (
         <Card className="border-0 shadow-lg observe-fade">
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-6">
@@ -299,12 +311,11 @@ export default function AnalyticsDashboard() {
             </div>
 
             <div className="space-y-3">
-              {data.topRestaurants.map((restaurant, index) => {
-                const maxVotes = Math.max(...data.topRestaurants!.map((r) => r.votes));
-                const percentage = (restaurant.votes / maxVotes) * 100;
+              {topRestaurants.map((restaurant, index) => {
+                const percentage = barHeightPercent(restaurant.votes, maxVotes);
                 return (
                   <div
-                    key={restaurant.name}
+                    key={`${restaurant.name}-${index}`}
                     className="group"
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
@@ -338,7 +349,8 @@ export default function AnalyticsDashboard() {
             </div>
           </CardContent>
         </Card>
-      )}
+        );
+      })()}
 
       {/* Quick Stats */}
       <div className="grid md:grid-cols-3 gap-6 observe-fade">
@@ -376,7 +388,9 @@ export default function AnalyticsDashboard() {
               <TrendingUp className="w-8 h-8 text-orange-600" />
               <div>
                 <div className="text-2xl font-bold text-orange-900">
-                  +{data?.trends?.votesChange || 0}%
+                  {typeof data?.trends?.votesChange === "number"
+                    ? `${data.trends.votesChange > 0 ? "+" : ""}${data.trends.votesChange}%`
+                    : "—"}
                 </div>
                 <div className="text-sm text-orange-700">Growth This Week</div>
               </div>

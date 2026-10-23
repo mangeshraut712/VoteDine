@@ -135,6 +135,15 @@ export class VoiceCommandService {
           "Display the leaderboard"
         ],
         description: "Show current voting results"
+      },
+      {
+        intent: VoiceIntent.END_VOTING,
+        examples: [
+          "End voting",
+          "Close the vote",
+          "Stop voting"
+        ],
+        description: "End the voting session"
       }
     ];
   }
@@ -205,15 +214,32 @@ export class VoiceCommandService {
       case VoiceIntent.SHOW_RESULTS:
         return this.handleShowResults(roomId);
 
+      case VoiceIntent.END_VOTING:
+        return this.handleEndVoting(roomId);
+
       case VoiceIntent.HELP:
         return this.handleHelp();
 
-      default:
+      default: {
+        const unhandled: never = command.intent;
+        void unhandled;
         return {
           text: "I'm not sure how to help with that. Try asking for help.",
           followUp: "Say 'help' to see available commands"
         };
+      }
     }
+  }
+
+  private async handleEndVoting(roomId?: string): Promise<VoiceResponse> {
+    return {
+      text: "Ending the voting session.",
+      action: {
+        type: "end_voting",
+        data: { roomId }
+      },
+      followUp: "Results stay available in the room."
+    };
   }
 
   private async handleCreateRoom(_command: VoiceCommand): Promise<VoiceResponse> {

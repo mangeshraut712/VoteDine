@@ -1,15 +1,32 @@
 import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
 
-const recommendationSchema = z.object({
+const dietaryTag = z.enum(["vegan", "vegetarian", "gluten-free", "halal", "kosher"]);
+
+function queryNumber(schema: z.ZodNumber) {
+  return z.preprocess((value) => {
+    if (value === undefined || value === null || value === "") return undefined;
+    if (typeof value === "number") return value;
+    if (typeof value === "string") return Number(value);
+    return value;
+  }, schema.optional());
+}
+
+export const recommendationSchema = z.object({
   mood: z.enum(["cozy", "adventurous", "quick", "celebrate", "healthy"]).optional(),
   priceRange: z.enum(["$", "$$", "$$$", "$$$$"]).optional(),
-  dietary: z.array(z.enum(["vegan", "vegetarian", "gluten-free", "halal", "kosher"]))
-    .optional(),
-  groupSize: z.number().min(1).max(50).optional(),
+  dietary: z.preprocess((value) => {
+    if (value === undefined || value === null || value === "") return undefined;
+    if (Array.isArray(value)) return value;
+    if (typeof value === "string") {
+      return value.split(",").map((part) => part.trim()).filter(Boolean);
+    }
+    return value;
+  }, z.array(dietaryTag).max(5).optional()),
+  groupSize: queryNumber(z.number().int().min(1).max(50)),
   timeOfDay: z.enum(["breakfast", "lunch", "dinner", "late"]).optional(),
-  location: z.string().optional(),
-  cuisine: z.string().optional(),
+  location: z.string().trim().max(100).optional(),
+  cuisine: z.string().trim().max(50).optional(),
 });
 
 type Recommendation = {
@@ -75,7 +92,10 @@ export async function recommendationRoutes(
       const input = recommendationSchema.parse(request.query);
 
       // Fetch all restaurants from DB
-      const dbRestaurants = await fastify.prisma.restaurant.findMany();
+      const dbRestaurants = await fastify.prisma.restaurant.findMany({
+        orderBy: { rating: { sort: "desc", nulls: "last" } },
+        take: 100,
+      });
 
       const ranked = dbRestaurants
         .map((r) => {
@@ -120,7 +140,7 @@ export async function recommendationRoutes(
         return reply.status(400).send({
           success: false,
           message: "Invalid input",
-          errors: error.errors,
+          errors: error.issues,
         });
       }
       throw error;

@@ -123,10 +123,15 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+
   const value = useMemo<I18nContextValue>(
     () => ({
       locale,
       setLocale: (next) => {
+        if (!(next in translations)) return;
         setLocale(next);
         window.localStorage.setItem(storageKey, next);
       },

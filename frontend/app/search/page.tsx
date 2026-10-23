@@ -98,7 +98,7 @@ function SearchResults() {
                 <h3 className="text-lg font-bold mb-1">{restaurant.name}</h3>
                 <div className="flex items-center text-sm text-gray-500 mb-2">
                   <MapPin className="w-4 h-4 mr-1" />
-                  {restaurant.location?.address1}, {restaurant.location?.city}
+                  {[restaurant.location?.address1, restaurant.location?.city].filter(Boolean).join(", ") || "Address unavailable"}
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-orange-600 font-medium">
@@ -111,6 +111,10 @@ function SearchResults() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      ) : !query ? (
+        <div className="text-center py-12 text-gray-500">
+          Enter a search term to find restaurants.
         </div>
       ) : (
         <div className="text-center py-12 text-gray-500">

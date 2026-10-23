@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import AIRecommendations from "@/components/ai-recommendations";
 import { demoRecommendations, isDemoMode } from "@/lib/demo";
+import { apiUrl } from "@/lib/api";
+import { toRecommendationId } from "@/lib/recommendations";
 
 interface Recommendation {
   restaurantId: number;
@@ -24,11 +26,11 @@ export default function AIRecommendationsPage() {
         setRecommendations(demoRecommendations);
         return;
       }
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recommendations`);
+      const response = await fetch(apiUrl("/api/recommendations"));
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data.recommendations) {
-          const mapped = data.data.recommendations.map(
+          const mapped = data.data.recommendations.flatMap(
             (item: {
               id: string;
               name: string;
@@ -36,14 +38,18 @@ export default function AIRecommendationsPage() {
               confidence: number;
               score: number;
               insights: string[];
-            }) => ({
-              restaurantId: parseInt(item.id.replace(/\D/g, '')) || Math.floor(Math.random() * 10000),
-              name: item.name,
-              reason: item.description,
-              confidence: item.confidence,
-              matchScore: Math.min(100, Math.round(item.confidence * 100)),
-              factors: item.insights?.slice(0, 3) || ["AI-powered pick", "Curated for you"],
-            })
+            }) => {
+              const restaurantId = toRecommendationId(item.id);
+              if (restaurantId === null) return [];
+              return [{
+                restaurantId,
+                name: item.name,
+                reason: item.description,
+                confidence: item.confidence,
+                matchScore: Math.min(100, Math.round(item.confidence * 100)),
+                factors: item.insights?.slice(0, 3) || ["AI-powered pick", "Curated for you"],
+              }];
+            }
           );
           setRecommendations(mapped);
         }
