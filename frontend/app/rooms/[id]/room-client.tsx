@@ -17,6 +17,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { demoRoom, isDemoMode } from "@/lib/demo";
+import { readAuthToken } from "@/lib/auth-client";
+import { nextVoteTotal, sumVoteCount } from "@/lib/votes";
 
 interface RoomState {
   name: string;
@@ -50,8 +52,10 @@ export default function RoomClient({ id }: { id: string }) {
       return;
     }
 
+    let cancelled = false;
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001";
-    const newSocket = io(socketUrl);
+    const token = readAuthToken(window.sessionStorage);
+    const newSocket = io(socketUrl, token ? { auth: { token } } : undefined);
 
     newSocket.on("connect", () => {
       setIsConnected(true);
@@ -113,34 +117,48 @@ export default function RoomClient({ id }: { id: string }) {
     setSocket(newSocket);
 
     fetch(`/api/rooms/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setRoomState({
-            name: data.data.name,
-            code: data.data.code,
-            users:
-              data.data.members?.map(
-                (m: { guestName?: string; user?: { username?: string }; isHost: boolean }) => ({
-                  name: m.guestName || m.user?.username || "Anonymous",
-                  isHost: m.isHost || false,
-                })
-              ) || [],
-            restaurants:
-              data.data.roomRestaurants?.map(
-                (rr: { restaurant: { id: number; name: string; cuisine?: string; votes?: unknown[] } }) => ({
-                  id: rr.restaurant.id,
-                  name: rr.restaurant.name,
-                  cuisine: rr.restaurant.cuisine || "Various",
-                  votes: rr.restaurant.votes?.length || 0,
-                })
-              ) || [],
-          });
+      .then(async (res) => {
+        const data = await res.json().catch(() => null);
+        if (cancelled) return;
+        if (!res.ok || !data?.success) {
+          setError(data?.message || "Room not found");
+          return;
         }
+        setRoomState({
+          name: data.data.name,
+          code: data.data.code,
+          users:
+            data.data.members?.map(
+              (m: { guestName?: string; user?: { username?: string }; isHost: boolean }) => ({
+                name: m.guestName || m.user?.username || "Anonymous",
+                isHost: m.isHost || false,
+              })
+            ) || [],
+          restaurants:
+            data.data.roomRestaurants?.map(
+              (rr: {
+                restaurant: {
+                  id: number;
+                  name: string;
+                  cuisine?: string;
+                  voteCount?: number;
+                  votes?: Array<{ voteCount?: number }>;
+                };
+              }) => ({
+                id: rr.restaurant.id,
+                name: rr.restaurant.name,
+                cuisine: rr.restaurant.cuisine || "Various",
+                votes: sumVoteCount(rr.restaurant.votes, rr.restaurant.voteCount),
+              })
+            ) || [],
+        });
       })
-      .catch(console.error);
+      .catch(() => {
+        if (!cancelled) setError("Failed to load room");
+      });
 
     return () => {
+      cancelled = true;
       newSocket.disconnect();
     };
   }, [id]);
@@ -151,25 +169,28 @@ export default function RoomClient({ id }: { id: string }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleVote = (restaurantId: number, _isUpvote: boolean) => {
+  const handleVote = (restaurantId: number, isUpvote: boolean) => {
     if (isDemoMode) {
       setRoomState((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
           restaurants: prev.restaurants.map((r) =>
-            r.id === restaurantId ? { ...r, votes: r.votes + (_isUpvote ? 1 : -1) } : r
+            r.id === restaurantId ? { ...r, votes: nextVoteTotal(r.votes, isUpvote) } : r
           ),
         };
       });
+      return;
+    }
+    if (!readAuthToken(window.sessionStorage)) {
+      setError("Sign in to vote");
       return;
     }
     if (!socket || !isConnected) return;
     socket.emit("vote", {
       roomId: id,
       restaurantId,
-      userId: undefined,
-      guestName: "Guest",
+      increment: isUpvote ? 1 : -1,
     });
   };
 
@@ -197,7 +218,7 @@ export default function RoomClient({ id }: { id: string }) {
     if (!socket || !isConnected) return;
     socket.emit("add-restaurant", {
       roomId: id,
-      restaurantId: Math.floor(Math.random() * 5) + 1,
+      name: newRestaurant.trim(),
     });
     setNewRestaurant("");
   };
@@ -229,7 +250,7 @@ export default function RoomClient({ id }: { id: string }) {
   if (!roomState) {
     return (
       <div className="min-h-screen bg-white pt-24 pb-16 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center" role="status" aria-live="polite">
           <Loader2 className="w-12 h-12 text-orange-500 animate-spin mx-auto mb-4" />
           <p className="text-gray-500">Loading room...</p>
         </div>
@@ -262,7 +283,7 @@ export default function RoomClient({ id }: { id: string }) {
               <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-xl">
                 <span className="text-sm text-gray-500">Code:</span>
                 <span className="font-mono font-bold text-gray-900">{id}</span>
-                <button onClick={copyCode} className="text-gray-400 hover:text-gray-600">
+                <button type="button" onClick={copyCode} className="text-gray-400 hover:text-gray-600" aria-label="Copy room code">
                   {copied ? (
                     <Check className="w-4 h-4 text-green-500" />
                   ) : (
@@ -285,13 +306,16 @@ export default function RoomClient({ id }: { id: string }) {
 
               <div className="flex gap-2 mb-6">
                 <Input
+                  aria-label="Restaurant name"
                   placeholder="Add a restaurant..."
                   value={newRestaurant}
                   onChange={(e) => setNewRestaurant(e.target.value)}
                   className="flex-1 h-12 rounded-xl border-gray-200"
                 />
                 <Button
+                  type="button"
                   onClick={addRestaurant}
+                  aria-label="Add restaurant"
                   className="h-12 px-6 bg-orange-500 hover:bg-orange-600 text-white rounded-xl"
                 >
                   <Plus className="w-5 h-5" />
@@ -315,7 +339,9 @@ export default function RoomClient({ id }: { id: string }) {
                       </div>
                       <div className="flex items-center gap-2">
                         <button
+                          type="button"
                           onClick={() => handleVote(restaurant.id, true)}
+                          aria-label={`Upvote ${restaurant.name}`}
                           className="p-2 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-lg transition-colors"
                         >
                           <ThumbsUp className="w-5 h-5" />
@@ -324,7 +350,9 @@ export default function RoomClient({ id }: { id: string }) {
                           {restaurant.votes}
                         </span>
                         <button
+                          type="button"
                           onClick={() => handleVote(restaurant.id, false)}
+                          aria-label={`Downvote ${restaurant.name}`}
                           className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         >
                           <ThumbsDown className="w-5 h-5" />

@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
+import { addVotesToBuckets, bucketsToTrend, buildUtcDayBuckets } from "../lib/dates.js";
 
 const trendQuerySchema = z.object({
   days: z
@@ -11,75 +12,55 @@ const trendQuerySchema = z.object({
     }),
 });
 
-function formatDateKey(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
 export async function analyticsRoutes(
   fastify: FastifyInstance,
   _options: FastifyPluginOptions
 ) {
   fastify.get("/overview", async (_request: FastifyRequest, reply: FastifyReply) => {
-    const [rooms, activeRooms, users, restaurants, votes, topRestaurantsList] = await Promise.all([
+    const [rooms, activeRooms, users, restaurants, votes, topCuisineGroups, voteGroups] = await Promise.all([
       fastify.prisma.room.count(),
       fastify.prisma.room.count({ where: { isActive: true } }),
       fastify.prisma.user.count(),
       fastify.prisma.restaurant.count(),
       fastify.prisma.vote.aggregate({ _sum: { voteCount: true } }),
-      // Get top restaurants by votes
-      fastify.prisma.restaurant.findMany({
+      fastify.prisma.restaurant.groupBy({
+        by: ["cuisine"],
+        _count: { cuisine: true },
+        where: { cuisine: { not: null } },
+        orderBy: { _count: { cuisine: "desc" } },
+        take: 1,
+      }),
+      fastify.prisma.vote.groupBy({
+        by: ["restaurantId"],
+        _sum: { voteCount: true },
+        orderBy: { _sum: { voteCount: "desc" } },
         take: 5,
-        include: {
-          _count: {
-            select: { votes: true }
-          }
-        },
-        orderBy: {
-          votes: {
-            _count: 'desc'
-          }
-        }
-      })
+      }),
     ]);
 
-    // Get top cuisine
-    const topCuisineGroups = await fastify.prisma.restaurant.groupBy({
-      by: ["cuisine"],
-      _count: { cuisine: true },
-      where: { cuisine: { not: null } },
-      orderBy: { _count: { cuisine: "desc" } },
-      take: 1,
+    const rankedRestaurants = await fastify.prisma.restaurant.findMany({
+      where: { id: { in: voteGroups.map((group) => group.restaurantId) } },
+    });
+    const topRestaurants = voteGroups.flatMap((group) => {
+      const restaurant = rankedRestaurants.find((item) => item.id === group.restaurantId);
+      if (!restaurant) return [];
+      return [{
+        name: restaurant.name,
+        votes: group._sum.voteCount ?? 0,
+        cuisine: restaurant.cuisine || "Mixed",
+      }];
     });
 
-    // Get last 7 days voting trends
     const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(endDate.getDate() - 6);
-    startDate.setHours(0, 0, 0, 0);
+    const dayBuckets = buildUtcDayBuckets(endDate, 7);
+    const windowStart = new Date(`${Array.from(dayBuckets.keys())[0]}T00:00:00.000Z`);
 
     const votingTrendsData = await fastify.prisma.vote.findMany({
-      where: { createdAt: { gte: startDate } },
+      where: { createdAt: { gte: windowStart } },
       select: { createdAt: true, voteCount: true }
     });
-
-    const dayBuckets = new Map<string, number>();
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
-      dayBuckets.set(formatDateKey(date), 0);
-    }
-
-    votingTrendsData.forEach((vote) => {
-      const key = formatDateKey(vote.createdAt);
-      if (dayBuckets.has(key)) {
-        dayBuckets.set(key, (dayBuckets.get(key) ?? 0) + vote.voteCount);
-      }
-    });
-
-    const votingTrends = Array.from(dayBuckets.entries()).map(([date, count]) => ({
-      date,
-      votes: count,
-    }));
+    addVotesToBuckets(dayBuckets, votingTrendsData);
+    const votingTrends = bucketsToTrend(dayBuckets);
 
     const topCuisine = topCuisineGroups[0]?.cuisine ?? "Mixed";
     const totalVotes = votes._sum.voteCount ?? 0;
@@ -94,11 +75,7 @@ export async function analyticsRoutes(
         totalVotes,
         topCuisine,
         votingTrends,
-        topRestaurants: topRestaurantsList.map(r => ({
-          name: r.name,
-          votes: r._count.votes,
-          cuisine: r.cuisine || "Mixed"
-        }))
+        topRestaurants
       },
     });
   });
@@ -136,15 +113,13 @@ export async function analyticsRoutes(
   fastify.get("/trend", async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { days } = trendQuerySchema.parse(request.query);
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - (days - 1));
-      startDate.setHours(0, 0, 0, 0);
+      const dayBuckets = buildUtcDayBuckets(new Date(), days);
+      const windowStart = new Date(`${Array.from(dayBuckets.keys())[0]}T00:00:00.000Z`);
 
       const votes = await fastify.prisma.vote.findMany({
         where: {
           createdAt: {
-            gte: startDate,
+            gte: windowStart,
           },
         },
         select: {
@@ -152,25 +127,8 @@ export async function analyticsRoutes(
           voteCount: true,
         },
       });
-
-      const dayBuckets = new Map<string, number>();
-      for (let i = 0; i < days; i += 1) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-        dayBuckets.set(formatDateKey(date), 0);
-      }
-
-      votes.forEach((vote) => {
-        const key = formatDateKey(vote.createdAt);
-        if (dayBuckets.has(key)) {
-          dayBuckets.set(key, (dayBuckets.get(key) ?? 0) + vote.voteCount);
-        }
-      });
-
-      const trend = Array.from(dayBuckets.entries()).map(([date, count]) => ({
-        date,
-        votes: count,
-      }));
+      addVotesToBuckets(dayBuckets, votes);
+      const trend = bucketsToTrend(dayBuckets);
 
       return reply.send({
         success: true,
@@ -181,7 +139,7 @@ export async function analyticsRoutes(
         return reply.status(400).send({
           success: false,
           message: "Invalid input",
-          errors: error.errors,
+          errors: error.issues,
         });
       }
       throw error;

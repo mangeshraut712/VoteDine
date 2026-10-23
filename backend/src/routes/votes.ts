@@ -1,53 +1,47 @@
 import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
-
-const voteSchema = z.object({
-  restaurantId: z.number(),
-  roomId: z.string().optional(),
-  increment: z.number().min(-1).max(1).default(1),
-});
-
-// Add authentication middleware
-async function authenticate(request: FastifyRequest, _reply: FastifyReply) {
-  try {
-    await request.jwtVerify();
-  } catch {
-    // For votes, we might allow non-authenticated users in some cases
-    // but we still want to try to identify them
-  }
-}
+import { getAuthUserId } from "../lib/auth-user.js";
+import { leaderboardQuerySchema, resolveVoteWrite, voteBodySchema } from "../lib/votes.js";
+import { authenticate } from "../middleware/authenticate.js";
 
 export async function voteRoutes(
   fastify: FastifyInstance,
   _options: FastifyPluginOptions
 ) {
-  // Cast vote
   fastify.post("/", { preHandler: [authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const { restaurantId, roomId, increment } = voteSchema.parse(request.body);
-      const user = request.user as { userId?: number; id?: number } | undefined;
-      const userId = user?.userId || user?.id || 1;
+      const { restaurantId, roomId, increment } = voteBodySchema.parse(request.body);
+      const userId = getAuthUserId(request.user);
+      if (userId === null) {
+        return reply.status(401).send({ success: false, message: "Unauthorized" });
+      }
 
-      const vote = await fastify.prisma.vote.upsert({
+      const existing = await fastify.prisma.vote.findFirst({
         where: {
-          userId_restaurantId_roomId: {
-            userId,
-            restaurantId,
-            roomId: roomId || null,
-          },
-        },
-        update: {
-          voteCount: {
-            increment: increment,
-          },
-        },
-        create: {
           userId,
           restaurantId,
-          roomId: roomId || null,
-          voteCount: Math.max(0, increment),
+          roomId: roomId ?? null,
         },
       });
+
+      const decision = resolveVoteWrite(existing?.voteCount ?? null, increment);
+      if (decision.ok === false) {
+        return reply.status(400).send({ success: false, message: decision.message });
+      }
+
+      const vote = existing
+        ? await fastify.prisma.vote.update({
+            where: { id: existing.id },
+            data: { voteCount: decision.voteCount },
+          })
+        : await fastify.prisma.vote.create({
+            data: {
+              userId,
+              restaurantId,
+              roomId: roomId ?? null,
+              voteCount: decision.voteCount,
+            },
+          });
 
       return reply.send({
         success: true,
@@ -58,28 +52,23 @@ export async function voteRoutes(
         return reply.status(400).send({
           success: false,
           message: "Invalid input",
-          errors: error.errors,
+          errors: error.issues,
         });
       }
       throw error;
     }
   });
 
-  // Get user's votes
   fastify.get("/my-votes", { preHandler: [authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const user = request.user as { userId?: number; id?: number } | undefined;
-    const userId = user?.userId || user?.id || 1;
+    const userId = getAuthUserId(request.user);
+    if (userId === null) {
+      return reply.status(401).send({ success: false, message: "Unauthorized" });
+    }
 
     const votes = await fastify.prisma.vote.findMany({
-      where: {
-        userId,
-      },
-      include: {
-        restaurant: true,
-      },
-      orderBy: {
-        voteCount: "desc",
-      },
+      where: { userId },
+      include: { restaurant: true },
+      orderBy: { voteCount: "desc" },
     });
 
     return reply.send({
@@ -88,16 +77,16 @@ export async function voteRoutes(
     });
   });
 
-  // Get room votes
   fastify.get("/room/:roomId", async (request: FastifyRequest, reply: FastifyReply) => {
-    const { roomId } = request.params as { roomId: string };
+    const params = z.object({ roomId: z.string().uuid() }).safeParse(request.params);
+    if (!params.success) {
+      return reply.status(400).send({ success: false, message: "Invalid room id" });
+    }
 
     const votes = await fastify.prisma.vote.groupBy({
       by: ["restaurantId"],
-      where: { roomId },
-      _sum: {
-        voteCount: true,
-      },
+      where: { roomId: params.data.roomId },
+      _sum: { voteCount: true },
     });
 
     return reply.send({
@@ -106,44 +95,42 @@ export async function voteRoutes(
     });
   });
 
-  // Get leaderboard
   fastify.get("/leaderboard", async (request: FastifyRequest, reply: FastifyReply) => {
-    const { roomId, limit = 10 } = request.query as { roomId?: string; limit?: string };
+    try {
+      const { roomId, limit } = leaderboardQuerySchema.parse(request.query);
+      const where = roomId ? { roomId } : { roomId: null };
 
-    const where = roomId ? { roomId } : { roomId: null };
+      const votes = await fastify.prisma.vote.groupBy({
+        by: ["restaurantId"],
+        where,
+        _sum: { voteCount: true },
+        orderBy: { _sum: { voteCount: "desc" } },
+        take: limit,
+      });
 
-    const votes = await fastify.prisma.vote.groupBy({
-      by: ["restaurantId"],
-      where,
-      _sum: {
-        voteCount: true,
-      },
-      orderBy: {
-        _sum: {
-          voteCount: "desc",
-        },
-      },
-      take: parseInt(limit.toString()),
-    });
+      const restaurantIds = votes.map((vote) => vote.restaurantId);
+      const restaurants = await fastify.prisma.restaurant.findMany({
+        where: { id: { in: restaurantIds } },
+      });
 
-    const restaurantIds = votes.map((v) => v.restaurantId);
-    const restaurants = await fastify.prisma.restaurant.findMany({
-      where: {
-        id: {
-          in: restaurantIds,
-        },
-      },
-    });
+      const leaderboard = votes.map((vote) => ({
+        restaurant: restaurants.find((restaurant) => restaurant.id === vote.restaurantId),
+        votes: vote._sum?.voteCount,
+      }));
 
-    const leaderboard = votes.map((vote) => ({
-      restaurant: restaurants.find((r) => r.id === vote.restaurantId),
-      votes: vote._sum?.voteCount,
-    }));
-
-    return reply.send({
-      success: true,
-      data: leaderboard,
-    });
+      return reply.send({
+        success: true,
+        data: leaderboard,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send({
+          success: false,
+          message: "Invalid input",
+          errors: error.issues,
+        });
+      }
+      throw error;
+    }
   });
 }
-

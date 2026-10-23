@@ -1,4 +1,5 @@
 import { ShareContent, SocialPlatform, ShareAnalytics } from '../types/social-share';
+import { isSafeHttpUrl, sanitizeShareText } from '../lib/safe-url.js';
 
 export class SocialShareService {
   private static instance: SocialShareService;
@@ -15,50 +16,59 @@ export class SocialShareService {
    */
   generateShareContent(content: ShareContent): ShareContent {
     const baseUrl = process.env.FRONTEND_URL || 'https://votedine.com';
+    const safeUrl = content.url && isSafeHttpUrl(content.url) ? content.url : undefined;
+    const title = sanitizeShareText(content.title);
+    const description = sanitizeShareText(content.description);
+    const roomCode = content.roomCode && /^[A-Za-z0-9-]{4,36}$/.test(content.roomCode)
+      ? content.roomCode
+      : undefined;
 
     switch (content.type) {
       case 'room':
         return {
           ...content,
-          title: `Join my VoteDine room!`,
-          description: `Help us decide where to eat! Room code: ${content.roomCode}`,
-          url: content.url || `${baseUrl}/room/${content.roomCode}`,
-          imageUrl: content.imageUrl || `${baseUrl}/api/og/room/${content.roomCode}`
+          title: 'Join my VoteDine room!',
+          description: `Help us decide where to eat! Room code: ${roomCode ?? ''}`,
+          url: safeUrl || `${baseUrl}/rooms/${encodeURIComponent(roomCode ?? '')}`,
+          imageUrl: content.imageUrl && isSafeHttpUrl(content.imageUrl) ? content.imageUrl : undefined,
         };
 
       case 'restaurant':
         return {
           ...content,
-          title: `Check out ${content.restaurantName}!`,
-          description: `Found this great restaurant on VoteDine`,
-          url: content.url || `${baseUrl}/restaurant/${content.restaurantId}`,
-          imageUrl: content.imageUrl || `${baseUrl}/api/og/restaurant/${content.restaurantId}`
+          title: sanitizeShareText(`Check out ${content.restaurantName ?? 'this restaurant'}!`),
+          description: 'Found this great restaurant on VoteDine',
+          url: safeUrl || `${baseUrl}/search?q=${encodeURIComponent(content.restaurantName ?? '')}`,
+          imageUrl: content.imageUrl && isSafeHttpUrl(content.imageUrl) ? content.imageUrl : undefined,
         };
 
       case 'vote_result':
         return {
           ...content,
-          title: content.winner ?
-            `We picked ${content.restaurantName}! 🎉` :
-            `Voting complete for ${content.restaurantName}`,
+          title: sanitizeShareText(content.winner ?
+            `We picked ${content.restaurantName ?? 'a restaurant'}!` :
+            `Voting complete for ${content.restaurantName ?? 'the group'}`),
           description: content.winner ?
-            `${content.voteCount} votes decided our dining destination!` :
-            `See the voting results for our group meal`,
-          url: content.url || `${baseUrl}/room/${content.roomCode}/results`,
-          imageUrl: content.imageUrl || `${baseUrl}/api/og/results/${content.roomCode}`
+            `${content.voteCount ?? 0} votes decided our dining destination!` :
+            'See the voting results for our group meal',
+          url: safeUrl || `${baseUrl}/rooms/${encodeURIComponent(roomCode ?? '')}`,
+          imageUrl: content.imageUrl && isSafeHttpUrl(content.imageUrl) ? content.imageUrl : undefined,
         };
 
       case 'achievement':
         return {
           ...content,
-          title: content.title,
-          description: content.description,
-          url: content.url || baseUrl,
-          imageUrl: content.imageUrl || `${baseUrl}/api/og/achievement`
+          title,
+          description,
+          url: safeUrl || baseUrl,
+          imageUrl: content.imageUrl && isSafeHttpUrl(content.imageUrl) ? content.imageUrl : undefined,
         };
 
-      default:
-        return content;
+      default: {
+        const unhandled: never = content.type;
+        void unhandled;
+        return { ...content, title, description, url: safeUrl };
+      }
     }
   }
 
@@ -68,8 +78,8 @@ export class SocialShareService {
   generateShareUrl(content: ShareContent, platform: SocialPlatform): string {
     const shareContent = this.generateShareContent(content);
     const encodedUrl = encodeURIComponent(shareContent.url || '');
-    const encodedTitle = encodeURIComponent(shareContent.title);
-    const encodedDescription = encodeURIComponent(shareContent.description);
+    const encodedTitle = encodeURIComponent(sanitizeShareText(shareContent.title));
+    const encodedDescription = encodeURIComponent(sanitizeShareText(shareContent.description));
 
     switch (platform) {
       case SocialPlatform.FACEBOOK:
@@ -148,29 +158,17 @@ export class SocialShareService {
   /**
    * Generate QR code for sharing
    */
-  async generateQRCode(url: string): Promise<string> {
-    try {
-      // This would integrate with QR code generation service
-      // For now, return mock QR code URL
-      return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
-    } catch (error) {
-      console.error('Failed to generate QR code:', error);
-      return '';
-    }
+  async generateQRCode(url: string): Promise<string | null> {
+    if (!isSafeHttpUrl(url)) return null;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
   }
 
   /**
    * Create shareable short URL
    */
-  async createShortUrl(url: string): Promise<string> {
-    try {
-      // This would integrate with URL shortening service
-      // For now, return original URL
-      return url;
-    } catch (error) {
-      console.error('Failed to create short URL:', error);
-      return url;
-    }
+  async createShortUrl(url: string): Promise<string | null> {
+    if (!isSafeHttpUrl(url)) return null;
+    return url;
   }
 
   /**
@@ -193,6 +191,22 @@ export class SocialShareService {
 
     if (content.type === 'restaurant' && !content.restaurantName) {
       errors.push('Restaurant name is required for restaurant shares');
+    }
+
+    if (content.title && content.title.length > 300) {
+      errors.push('Title is too long');
+    }
+
+    if (content.description && content.description.length > 2000) {
+      errors.push('Description is too long');
+    }
+
+    if (content.url && !isSafeHttpUrl(content.url)) {
+      errors.push('URL must be an absolute http(s) URL');
+    }
+
+    if (content.roomCode && !/^[A-Za-z0-9-]{4,36}$/.test(content.roomCode)) {
+      errors.push('Room code is invalid');
     }
 
     return {
@@ -252,8 +266,7 @@ export class SocialShareService {
    */
   async getTrendingContent(limit: number = 10): Promise<ShareContent[]> {
     try {
-      // This would fetch trending content from database
-      // For now, return mock data
+      const safeLimit = Number.isInteger(limit) && limit > 0 ? Math.min(limit, 50) : 10;
       return ([
         {
           type: 'room',
@@ -270,7 +283,7 @@ export class SocialShareService {
           restaurantName: 'The Italian Place',
           voteCount: 15
         }
-      ] as unknown as ShareContent[]).slice(0, limit);
+      ] as unknown as ShareContent[]).slice(0, safeLimit);
     } catch (error) {
       console.error('Failed to get trending content:', error);
       return [];

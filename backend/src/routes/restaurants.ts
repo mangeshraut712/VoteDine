@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
 import axios from "axios";
+import { parseRestaurantId, yelpErrorSummary } from "../lib/ids.js";
 
 interface YelpBusiness {
   id: string;
@@ -28,16 +29,25 @@ interface YelpResponse {
   total: number;
 }
 
-const searchSchema = z.object({
-  term: z.string().optional(),
-  location: z.string().optional(),
-  latitude: z.preprocess((val) => (val ? Number(val) : undefined), z.number().optional()),
-  longitude: z.preprocess((val) => (val ? Number(val) : undefined), z.number().optional()),
-  radius: z.preprocess((val) => (val ? Number(val) : undefined), z.number().min(100).max(40000).optional()),
-  categories: z.string().optional(),
-  price: z.string().optional(),
-  limit: z.preprocess((val) => (val ? Number(val) : undefined), z.number().min(1).max(50).optional()),
-  offset: z.preprocess((val) => (val ? Number(val) : undefined), z.number().optional()),
+function queryNumber(schema: z.ZodNumber) {
+  return z.preprocess((value) => {
+    if (value === undefined || value === null || value === "") return undefined;
+    if (typeof value === "number") return value;
+    if (typeof value === "string") return Number(value);
+    return value;
+  }, schema.optional());
+}
+
+export const searchSchema = z.object({
+  term: z.string().trim().max(100).optional(),
+  location: z.string().trim().max(100).optional(),
+  latitude: queryNumber(z.number().finite().min(-90).max(90)),
+  longitude: queryNumber(z.number().finite().min(-180).max(180)),
+  radius: queryNumber(z.number().int().min(100).max(40000)),
+  categories: z.string().trim().max(100).optional(),
+  price: z.string().trim().max(20).optional(),
+  limit: queryNumber(z.number().int().min(1).max(50)),
+  offset: queryNumber(z.number().int().min(0).max(1000)),
 });
 
 const YELP_API_URL = "https://api.yelp.com/v3/businesses/search";
@@ -97,20 +107,21 @@ export async function restaurantRoutes(
             total: response.data.total,
           });
         } catch (yelpError) {
-          console.error("Yelp API error, falling back to database:", yelpError);
+          request.log.error(yelpErrorSummary(yelpError), "Yelp API error, falling back to database");
         }
       }
 
-      // Fallback search from local database
-      const searchTerm = params.term || "";
+      const searchTerm = params.term?.trim();
       const dbRestaurants = await fastify.prisma.restaurant.findMany({
-        where: {
-          OR: [
-            { name: { contains: searchTerm, mode: "insensitive" } },
-            { cuisine: { contains: searchTerm, mode: "insensitive" } },
-            { address: { contains: searchTerm, mode: "insensitive" } },
-          ],
-        },
+        where: searchTerm
+          ? {
+              OR: [
+                { name: { contains: searchTerm, mode: "insensitive" } },
+                { cuisine: { contains: searchTerm, mode: "insensitive" } },
+                { address: { contains: searchTerm, mode: "insensitive" } },
+              ],
+            }
+          : {},
         take: params.limit || 20,
       });
 
@@ -142,7 +153,7 @@ export async function restaurantRoutes(
         return reply.status(400).send({
           success: false,
           message: "Invalid input",
-          errors: error.errors,
+          errors: error.issues,
         });
       }
       throw error;
@@ -152,9 +163,16 @@ export async function restaurantRoutes(
   // Get restaurant details
   fastify.get("/:id", async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: string };
+    const restaurantId = parseRestaurantId(id);
+    if (restaurantId === null) {
+      return reply.status(400).send({
+        success: false,
+        message: "Invalid restaurant id",
+      });
+    }
 
     const restaurant = await fastify.prisma.restaurant.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: restaurantId },
       include: {
         votes: {
           include: {

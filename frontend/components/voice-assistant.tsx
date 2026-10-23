@@ -109,7 +109,7 @@ export default function VoiceAssistant() {
       </div>
 
       {/* Transcript Display */}
-      <div className="p-4 bg-gray-50 rounded-xl mb-4 min-h-[60px] flex items-center">
+      <div className="p-4 bg-gray-50 rounded-xl mb-4 min-h-[60px] flex items-center" aria-live="polite">
         {transcript ? (
           <div className="flex items-center gap-2">
             <Volume2 className="w-4 h-4 text-orange-500" />

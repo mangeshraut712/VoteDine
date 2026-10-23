@@ -6,11 +6,13 @@ import { Plus, Users, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DEMO_ROOM_ID, isDemoMode } from "@/lib/demo";
+import { readAuthToken } from "@/lib/auth-client";
 
 export default function RoomsPage() {
   const [roomName, setRoomName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"create" | "join">("create");
   const router = useRouter();
 
@@ -19,24 +21,31 @@ export default function RoomsPage() {
     if (!roomName.trim()) return;
 
     setIsLoading(true);
+    setError(null);
     try {
       if (isDemoMode) {
         router.push(`/rooms/${DEMO_ROOM_ID}`);
         return;
       }
 
+      const token = readAuthToken(window.sessionStorage);
       const response = await fetch("/api/rooms", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ name: roomName }),
       });
+      const data = await response.json().catch(() => null);
 
-      if (response.ok) {
-        const data = await response.json();
+      if (response.ok && data?.success && data.data?.code) {
         router.push(`/rooms/${data.data.code}`);
+        return;
       }
-    } catch (error) {
-      console.error("Failed to create room:", error);
+      setError(data?.message || "Could not create the room");
+    } catch {
+      setError("Could not create the room");
     } finally {
       setIsLoading(false);
     }
@@ -44,8 +53,41 @@ export default function RoomsPage() {
 
   const handleJoinRoom = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!joinCode.trim()) return;
-    router.push(`/rooms/${isDemoMode ? DEMO_ROOM_ID : joinCode.toUpperCase()}`);
+    const code = joinCode.trim().toUpperCase();
+    if (!code) return;
+    if (isDemoMode) {
+      router.push(`/rooms/${DEMO_ROOM_ID}`);
+      return;
+    }
+    setError(null);
+    setIsLoading(true);
+    try {
+      const token = readAuthToken(window.sessionStorage);
+      const response = await fetch(`/api/rooms/${encodeURIComponent(code)}`);
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.success) {
+        setError(data?.message || "Room not found");
+        return;
+      }
+      const join = await fetch(`/api/rooms/${encodeURIComponent(code)}/join`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({}),
+      });
+      if (!join.ok && join.status !== 409) {
+        const joinData = await join.json().catch(() => null);
+        setError(joinData?.message || "Could not join the room");
+        return;
+      }
+      router.push(`/rooms/${code}`);
+    } catch {
+      setError("Could not join the room");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -135,13 +177,19 @@ export default function RoomsPage() {
               </div>
               <Button
                 type="submit"
-                disabled={isDemoMode ? !joinCode.trim() : joinCode.length < 8}
+                disabled={isLoading || (isDemoMode ? !joinCode.trim() : joinCode.length < 8)}
                 className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-xl"
               >
                 <ArrowRight className="w-5 h-5 mr-2" />
                 Join Room
               </Button>
             </form>
+          )}
+
+          {error && (
+            <p role="alert" className="text-center text-sm text-red-600 mt-4">
+              {error}
+            </p>
           )}
 
           {/* Help Text */}

@@ -6,7 +6,9 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function generateRoomId(): string {
-  return Math.random().toString(36).substring(2, 10).toUpperCase();
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("").toUpperCase();
 }
 
 export function formatCurrency(amount: number): string {

@@ -1,4 +1,5 @@
 module.exports = {
+    ignorePatterns: ["next-env.d.ts", ".next", "node_modules"],
     extends: ['next/core-web-vitals', 'next/typescript'],
     rules: {
         'react/no-unescaped-entities': 'off',

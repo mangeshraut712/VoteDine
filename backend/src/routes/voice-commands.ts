@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { VoiceCommandService } from '../services/voice-commands.js';
-import { VoiceSettings } from '../types/voice-commands';
+import { VoiceSettings } from '../types/voice-commands.js';
+import { isAcceptableAudioPayload } from '../socket/payloads.js';
 
 export async function voiceCommandsRoutes(fastify: FastifyInstance) {
   const voiceService = VoiceCommandService.getInstance();
@@ -64,6 +65,9 @@ export async function voiceCommandsRoutes(fastify: FastifyInstance) {
     try {
       const body = request.body as { audio?: string; settings?: VoiceSettings; roomId?: string };
       const audioData = body.audio || '';
+      if (!isAcceptableAudioPayload(audioData)) {
+        return reply.code(400).send({ error: 'Audio payload is missing or too large' });
+      }
       const settings: VoiceSettings = body.settings || { enabled: true, language: 'en-US', confidence: 0.7, autoSubmit: false };
       const roomId = body.roomId;
 

@@ -6,7 +6,7 @@ export async function socialShareRoutes(fastify: FastifyInstance) {
   const socialShareService = SocialShareService.getInstance();
 
   // POST /api/social/share - Generate share content
-  fastify.post('/api/social/share', {
+  fastify.post('/', {
     schema: {
       description: 'Generate shareable content for social platforms',
       tags: ['Social Share'],
@@ -141,7 +141,7 @@ export async function socialShareRoutes(fastify: FastifyInstance) {
   });
 
   // POST /api/social/track - Track share analytics
-  fastify.post('/api/social/track', {
+  fastify.post('/track', {
     schema: {
       description: 'Track social share analytics',
       tags: ['Social Share'],
@@ -191,7 +191,7 @@ export async function socialShareRoutes(fastify: FastifyInstance) {
   });
 
   // GET /api/social/analytics - Get share analytics
-  fastify.get('/api/social/analytics', {
+  fastify.get('/analytics', {
     schema: {
       description: 'Get social sharing analytics',
       tags: ['Social Share'],
@@ -257,7 +257,7 @@ export async function socialShareRoutes(fastify: FastifyInstance) {
   });
 
   // GET /api/social/trending - Get trending share content
-  fastify.get('/api/social/trending', {
+  fastify.get('/trending', {
     schema: {
       description: 'Get trending shareable content',
       tags: ['Social Share'],
@@ -310,14 +310,15 @@ export async function socialShareRoutes(fastify: FastifyInstance) {
   });
 
   // GET /api/social/qr/:url - Generate QR code
-  fastify.get('/api/social/qr/:url', {
+  fastify.get('/qr', {
     schema: {
       description: 'Generate QR code for sharing',
       tags: ['Social Share'],
-      params: {
+      querystring: {
         type: 'object',
+        required: ['url'],
         properties: {
-          url: { type: 'string', description: 'URL to encode in QR code' }
+          url: { type: 'string', minLength: 1, maxLength: 2000, description: 'URL to encode in QR code' }
         }
       },
       response: {
@@ -337,9 +338,15 @@ export async function socialShareRoutes(fastify: FastifyInstance) {
     }
   }, async (request, reply) => {
     try {
-      const { url } = request.params as { url: string };
+      const { url } = request.query as { url?: string };
+      if (!url) {
+        return reply.code(400).send({ error: 'Invalid URL' });
+      }
 
-      const qrCodeUrl = await socialShareService.generateQRCode(decodeURIComponent(url));
+      const qrCodeUrl = await socialShareService.generateQRCode(url);
+      if (!qrCodeUrl) {
+        return reply.code(400).send({ error: 'Invalid URL' });
+      }
 
       return reply.send({ qrCodeUrl });
     } catch (error) {
@@ -349,14 +356,15 @@ export async function socialShareRoutes(fastify: FastifyInstance) {
   });
 
   // GET /api/social/shorten/:url - Create short URL
-  fastify.get('/api/social/shorten/:url', {
+  fastify.get('/shorten', {
     schema: {
       description: 'Create short URL for sharing',
       tags: ['Social Share'],
-      params: {
+      querystring: {
         type: 'object',
+        required: ['url'],
         properties: {
-          url: { type: 'string', description: 'URL to shorten' }
+          url: { type: 'string', minLength: 1, maxLength: 2000, description: 'URL to shorten' }
         }
       },
       response: {
@@ -376,9 +384,15 @@ export async function socialShareRoutes(fastify: FastifyInstance) {
     }
   }, async (request, reply) => {
     try {
-      const { url } = request.params as { url: string };
+      const { url } = request.query as { url?: string };
+      if (!url) {
+        return reply.code(400).send({ error: 'Invalid URL' });
+      }
 
-      const shortUrl = await socialShareService.createShortUrl(decodeURIComponent(url));
+      const shortUrl = await socialShareService.createShortUrl(url);
+      if (!shortUrl) {
+        return reply.code(400).send({ error: 'Invalid URL' });
+      }
 
       return reply.send({ shortUrl });
     } catch (error) {
@@ -388,7 +402,7 @@ export async function socialShareRoutes(fastify: FastifyInstance) {
   });
 
   // GET /api/social/platforms - Get supported platforms
-  fastify.get('/api/social/platforms', {
+  fastify.get('/platforms', {
     schema: {
       description: 'Get list of supported social platforms',
       tags: ['Social Share'],

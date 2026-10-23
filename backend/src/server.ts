@@ -5,8 +5,8 @@ import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import rateLimit from "@fastify/rate-limit";
 import { Server } from "socket.io";
-import { createServer } from "http";
 import { PrismaClient } from "@prisma/client";
+import { getAuthUserId } from "./lib/auth-user.js";
 import { userRoutes } from "./routes/users.js";
 import { roomRoutes } from "./routes/rooms.js";
 import { restaurantRoutes } from "./routes/restaurants.js";
@@ -29,10 +29,9 @@ const fastify = Fastify({
   logger: true,
 });
 
-const server = createServer(fastify.server);
-const io = new Server(server, {
+const io = new Server(fastify.server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: env.FRONTEND_URL,
     methods: ["GET", "POST"],
   },
 });
@@ -67,6 +66,7 @@ async function main() {
 
   await fastify.register(jwt, {
     secret: env.JWT_SECRET,
+    sign: { expiresIn: "7d" },
   });
 
   await fastify.register(swagger, {
@@ -97,8 +97,15 @@ async function main() {
   await fastify.register(socialShareRoutes, { prefix: "/api/share" });
   await fastify.register(voiceCommandsRoutes, { prefix: "/api/voice" });
 
-  // Setup Socket.io handlers
-  setupSocketHandlers(io, prisma);
+  setupSocketHandlers(io, prisma, (token) => {
+    try {
+      const payload = fastify.jwt.verify<{ userId?: number; id?: number }>(token);
+      const userId = getAuthUserId(payload);
+      return userId ? { userId } : null;
+    } catch {
+      return null;
+    }
+  });
 
   // Health check with database status
   fastify.get("/health", async (request, reply) => {
