@@ -8,6 +8,13 @@ import {
   CalendarReminder
 } from '../types/calendar.js';
 
+
+function mapEventStatus(status: string | null | undefined): CalendarEventStatus {
+  const raw = String(status ?? "").toLowerCase();
+  const match = (Object.values(CalendarEventStatus) as string[]).find((value) => value === raw);
+  return (match as CalendarEventStatus | undefined) ?? CalendarEventStatus.SCHEDULED;
+}
+
 export class CalendarService {
   private static instance: CalendarService;
   private prisma: PrismaClient;
@@ -78,7 +85,7 @@ export class CalendarService {
         location: dbEvent.location || undefined,
         attendees: [],
         roomId: dbEvent.roomId || undefined,
-        status: CalendarEventStatus.SCHEDULED,
+        status: mapEventStatus(dbEvent.status),
         reminders: [],
         createdAt: dbEvent.createdAt,
         updatedAt: dbEvent.updatedAt
@@ -116,7 +123,7 @@ export class CalendarService {
         endTime: event.endTime,
         location: event.location || undefined,
         attendees: [],
-        status: CalendarEventStatus.SCHEDULED,
+        status: mapEventStatus(event.status),
         reminders: [],
         createdAt: event.createdAt,
         updatedAt: event.updatedAt
@@ -162,7 +169,7 @@ export class CalendarService {
         endTime: dbEvent.endTime,
         location: dbEvent.location || undefined,
         attendees: [],
-        status: CalendarEventStatus.SCHEDULED,
+        status: mapEventStatus(dbEvent.status),
         reminders: [],
         createdAt: dbEvent.createdAt,
         updatedAt: dbEvent.updatedAt
