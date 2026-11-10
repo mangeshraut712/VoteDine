@@ -98,10 +98,8 @@ export class CalendarService {
       const dbEvents = await this.prisma.calendarEvent.findMany({
         where: {
           userId,
-          startTime: {
-            gte: startDate,
-            lte: endDate
-          }
+          startTime: { lt: endDate },
+          endTime: { gt: startDate }
         },
         orderBy: {
           startTime: 'asc'
