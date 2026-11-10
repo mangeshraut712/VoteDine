@@ -67,6 +67,33 @@ describe("authenticated routes", () => {
     expect(vote.create).not.toHaveBeenCalled();
   });
 
+  it("rejects a REST vote for a missing or closed room", async () => {
+    const roomId = "6f1c2b0e-8a4d-4f7e-9b3a-1c2d3e4f5a6b";
+    const vote = { findFirst: vi.fn(), create: vi.fn(), update: vi.fn() };
+    const room = {
+      findUnique: vi
+        .fn()
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: roomId, isActive: false }),
+    };
+    const app = await buildApp((instance) => voteRoutes(instance, {}), { vote, room });
+    apps.push(app);
+
+    const send = () =>
+      app.inject({
+        method: "POST",
+        url: "/",
+        headers: { authorization: "Bearer valid" },
+        payload: { restaurantId: 3, roomId, increment: 1 },
+      });
+
+    expect((await send()).statusCode).toBe(404);
+    expect((await send()).statusCode).toBe(400);
+    expect(room.findUnique).toHaveBeenCalledWith({ where: { id: roomId } });
+    expect(vote.findFirst).not.toHaveBeenCalled();
+    expect(vote.create).not.toHaveBeenCalled();
+  });
+
   it("attributes a vote to the token user and will not go negative", async () => {
     const vote = {
       findFirst: vi.fn(async () => ({ id: 9, voteCount: 0 })),

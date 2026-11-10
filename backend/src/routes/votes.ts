@@ -16,6 +16,17 @@ export async function voteRoutes(
         return reply.status(401).send({ success: false, message: "Unauthorized" });
       }
 
+      if (roomId !== undefined) {
+        // Same rule as the socket "vote" handler: only open rooms take votes.
+        const room = await fastify.prisma.room.findUnique({ where: { id: roomId } });
+        if (!room) {
+          return reply.status(404).send({ success: false, message: "Room not found" });
+        }
+        if (!room.isActive) {
+          return reply.status(400).send({ success: false, message: "Room is no longer active" });
+        }
+      }
+
       const existing = await fastify.prisma.vote.findFirst({
         where: {
           userId,
