@@ -133,11 +133,11 @@ export async function voiceCommandsRoutes(fastify: FastifyInstance) {
         }
       },
       response: {
-        200: {
+        501: {
+          description: 'Text-to-speech is not implemented yet',
           type: 'object',
           properties: {
-            audioUrl: { type: 'string' },
-            duration: { type: 'number' }
+            error: { type: 'string' }
           }
         }
       }
@@ -157,6 +157,15 @@ export async function voiceCommandsRoutes(fastify: FastifyInstance) {
         type: 'object',
         properties: {
           filename: { type: 'string' }
+        }
+      },
+      response: {
+        404: {
+          description: 'No generated audio exists yet',
+          type: 'object',
+          properties: {
+            error: { type: 'string' }
+          }
         }
       }
     }
