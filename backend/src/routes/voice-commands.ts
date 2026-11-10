@@ -142,23 +142,10 @@ export async function voiceCommandsRoutes(fastify: FastifyInstance) {
         }
       }
     }
-  }, async (request, reply) => {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
-      const { text: _text, voice: _voice, language: _language, speed: _speed } = request.body as any;
-
-      // This would integrate with text-to-speech service
-      // For now, return mock response
-      const audioUrl = `/api/voice/audio/${Date.now()}.wav`;
-
-      return reply.send({
-        audioUrl,
-        duration: 2.5 // seconds
-      });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.code(500).send({ error: 'Failed to convert text to speech' });
-    }
+  }, async (_request, reply) => {
+    // No text-to-speech provider is wired up yet. Say so instead of handing
+    // back a URL to audio that does not exist.
+    return reply.code(501).send({ error: 'Text-to-speech is not available yet' });
   });
 
   // GET /audio/:filename - Serve generated audio files
@@ -174,17 +161,9 @@ export async function voiceCommandsRoutes(fastify: FastifyInstance) {
       }
     }
   }, async (_request, reply) => {
-    try {
-      // Logic for serving audio files would go here using request.params.filename
-
-      // This would serve actual audio files
-      // For now, return empty response
-      reply.type('audio/wav');
-      return reply.send(Buffer.from(''));
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.code(404).send({ error: 'Audio file not found' });
-    }
+    // Nothing generates audio files yet (see /text-to-speech), so there is
+    // nothing to serve. An empty 200 audio/wav body looked like a broken file.
+    return reply.code(404).send({ error: 'Audio file not found' });
   });
 
   // POST /settings - Update voice settings

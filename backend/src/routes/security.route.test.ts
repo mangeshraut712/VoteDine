@@ -227,6 +227,17 @@ describe("authenticated routes", () => {
     expect(response.statusCode).toBe(400);
   });
 
+  it("does not pretend to synthesize speech or serve empty audio", async () => {
+    const app = await buildApp((instance) => voiceCommandsRoutes(instance), {});
+    apps.push(app);
+    const tts = await app.inject({ method: "POST", url: "/text-to-speech", payload: { text: "hi" } });
+    expect(tts.statusCode).toBe(501);
+    expect(JSON.parse(tts.body)).not.toHaveProperty("audioUrl");
+    const audio = await app.inject({ method: "GET", url: "/audio/123.wav" });
+    expect(audio.statusCode).toBe(404);
+    expect(audio.headers["content-type"]).not.toContain("audio/wav");
+  });
+
   it("returns 401 instead of another user's profile when the token is missing", async () => {
     const user = { findUnique: vi.fn() };
     const app = await buildApp((instance) => userRoutes(instance, {}), { user });
