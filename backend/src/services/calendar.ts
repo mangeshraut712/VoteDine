@@ -9,10 +9,12 @@ import {
 } from '../types/calendar.js';
 
 
+const EVENT_STATUS_VALUES = Object.values(CalendarEventStatus) as CalendarEventStatus[];
+
 function mapEventStatus(status: string | null | undefined): CalendarEventStatus {
   const raw = String(status ?? "").toLowerCase();
-  const match = (Object.values(CalendarEventStatus) as string[]).find((value) => value === raw);
-  return (match as CalendarEventStatus | undefined) ?? CalendarEventStatus.SCHEDULED;
+  const match = EVENT_STATUS_VALUES.find((value) => value === raw);
+  return match ?? CalendarEventStatus.SCHEDULED;
 }
 
 export class CalendarService {
