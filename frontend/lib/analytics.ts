@@ -6,6 +6,14 @@ export function formatUtcWeekday(dateKey: string): string {
   const day = Number(match[3]);
   if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return dateKey;
   const date = new Date(Date.UTC(year, month - 1, day));
+  // Date.UTC rolls 2026-02-30 over to March 2; treat such keys as malformed.
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return dateKey;
+  }
   return new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "UTC" }).format(date);
 }
 

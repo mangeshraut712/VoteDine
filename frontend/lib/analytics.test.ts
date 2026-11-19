@@ -6,6 +6,13 @@ describe("analytics display", () => {
     expect(formatUtcWeekday("2026-09-01")).toBe("Tue");
   });
 
+  it("returns impossible calendar dates unchanged instead of rolling them over", () => {
+    expect(formatUtcWeekday("2026-02-30")).toBe("2026-02-30");
+    expect(formatUtcWeekday("2026-13-01")).toBe("2026-13-01");
+    expect(formatUtcWeekday("2026-04-00")).toBe("2026-04-00");
+    expect(formatUtcWeekday("2028-02-29")).toBe("Tue");
+  });
+
   it("does not divide by zero when every bucket is empty", () => {
     expect(barHeightPercent(0, 0)).toBe(0);
     expect(barHeightPercent(3, 6)).toBe(50);
