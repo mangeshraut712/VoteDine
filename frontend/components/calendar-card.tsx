@@ -4,14 +4,8 @@ import { useEffect, useState } from "react";
 import { Calendar, Clock, MapPin, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-
-interface UpcomingEvent {
-  id: string;
-  title: string;
-  startTime: string;
-  endTime: string;
-  location: string;
-}
+import { readAuthToken } from "@/lib/auth-client";
+import { fetchUpcomingEvents, type UpcomingEvent } from "@/lib/calendar-client";
 
 export default function CalendarCard() {
   const [events, setEvents] = useState<UpcomingEvent[]>([]);
@@ -20,11 +14,7 @@ export default function CalendarCard() {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await fetch("/api/calendar/events");
-        if (response.ok) {
-          const data = await response.json();
-          setEvents(data.events || []);
-        }
+        setEvents(await fetchUpcomingEvents(readAuthToken(window.sessionStorage)));
       } catch (error) {
         console.error("Failed to fetch calendar events:", error);
       } finally {
