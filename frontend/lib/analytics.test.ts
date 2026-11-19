@@ -21,5 +21,7 @@ describe("analytics display", () => {
   it("computes the change from the series instead of a fixed percent", () => {
     expect(trendPercentChange([10, 10, 20, 20])).toBe(100);
     expect(trendPercentChange([0, 5])).toBeNull();
+    expect(trendPercentChange([10, 10, 10, 10, 10, 10, 10])).toBe(0);
+    expect(trendPercentChange([10, 10, 10, 99, 20, 20, 20])).toBe(100);
   });
 });

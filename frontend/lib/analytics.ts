@@ -24,9 +24,10 @@ export function barHeightPercent(value: number, max: number): number {
 
 export function trendPercentChange(votes: number[]): number | null {
   if (votes.length < 2) return null;
+  // Equal-sized windows; with an odd count the middle value is left out.
   const half = Math.floor(votes.length / 2);
   const previous = votes.slice(0, half).reduce((sum, value) => sum + value, 0);
-  const recent = votes.slice(half).reduce((sum, value) => sum + value, 0);
+  const recent = votes.slice(-half).reduce((sum, value) => sum + value, 0);
   if (previous === 0) return recent === 0 ? 0 : null;
   return Math.round(((recent - previous) / previous) * 100);
 }
