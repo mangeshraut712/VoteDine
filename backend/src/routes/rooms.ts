@@ -148,6 +148,13 @@ export async function roomRoutes(
       const { guestName } = joinRoomBodySchema.parse(request.body ?? {});
       const userId = await authenticatedUserId(request, reply);
       if (userId === undefined) return;
+      if (userId === null && !guestName) {
+        // Without a token or a name the member row has no identity and can't be deduplicated.
+        return reply.status(400).send({
+          success: false,
+          message: "guestName is required to join without signing in",
+        });
+      }
 
       const room = await fastify.prisma.room.findUnique({
         where: { code: params.code.toUpperCase() },

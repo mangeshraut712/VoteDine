@@ -69,18 +69,21 @@ export default function RoomsPage() {
         setError(data?.message || "Room not found");
         return;
       }
-      const join = await fetch(`/api/rooms/${encodeURIComponent(code)}/join`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({}),
-      });
-      if (!join.ok && join.status !== 409) {
-        const joinData = await join.json().catch(() => null);
-        setError(joinData?.message || "Could not join the room");
-        return;
+      // Signed-out visitors can view the room; only signed-in users become members.
+      if (token) {
+        const join = await fetch(`/api/rooms/${encodeURIComponent(code)}/join`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({}),
+        });
+        if (!join.ok && join.status !== 409) {
+          const joinData = await join.json().catch(() => null);
+          setError(joinData?.message || "Could not join the room");
+          return;
+        }
       }
       router.push(`/rooms/${code}`);
     } catch {

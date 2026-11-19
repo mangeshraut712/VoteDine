@@ -146,6 +146,11 @@ describe("authenticated routes", () => {
       data: expect.objectContaining({ guestName: "Sam", roomId: "room-1" }),
     }));
 
+    roomMember.create.mockClear();
+    const nameless = await app.inject({ method: "POST", url: "/FRIDAY01/join", payload: {} });
+    expect(nameless.statusCode).toBe(400);
+    expect(roomMember.create).not.toHaveBeenCalled();
+
     const close = await app.inject({ method: "PATCH", url: "/FRIDAY01/close" });
     expect(close.statusCode).toBe(401);
     expect(room.update).not.toHaveBeenCalled();
