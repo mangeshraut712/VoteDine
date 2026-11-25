@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, MapPin } from "lucide-react";
 import Image from "next/image";
 import { demoRestaurants, isDemoMode } from "@/lib/demo";
+import { createLatestRequest } from "@/lib/latest-request";
 
 interface Restaurant {
   id: string;
@@ -26,40 +27,51 @@ function SearchResults() {
   const query = searchParams.get("q");
   const [results, setResults] = useState<Restaurant[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const latestSearch = useRef(createLatestRequest());
 
   useEffect(() => {
-    if (query) {
-      const search = async () => {
-        setIsLoading(true);
-        try {
-          if (isDemoMode) {
-            const needle = query.toLowerCase();
-            setResults(
-              demoRestaurants.filter(
-                (restaurant) =>
-                  restaurant.name.toLowerCase().includes(needle) ||
-                  restaurant.categories.some((category) =>
-                    category.title.toLowerCase().includes(needle)
-                  )
-              )
-            );
-            return;
-          }
-          const response = await fetch(
-            `/api/restaurants/search?term=${encodeURIComponent(query)}&location=Philadelphia`,
-          );
-          if (response.ok) {
-            const data = await response.json();
-            setResults(data.data || []);
-          }
-        } catch (error) {
-          console.error("Search failed:", error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      search();
+    const request = latestSearch.current.begin();
+    if (!query) {
+      setResults([]);
+      setIsLoading(false);
+      return;
     }
+
+    const search = async () => {
+      setIsLoading(true);
+      try {
+        if (isDemoMode) {
+          const needle = query.toLowerCase();
+          if (!request.isCurrent()) return;
+          setResults(
+            demoRestaurants.filter(
+              (restaurant) =>
+                restaurant.name.toLowerCase().includes(needle) ||
+                restaurant.categories.some((category) =>
+                  category.title.toLowerCase().includes(needle),
+                ),
+            ),
+          );
+          return;
+        }
+        const response = await fetch(
+          `/api/restaurants/search?term=${encodeURIComponent(query)}&location=Philadelphia`,
+          { signal: request.signal },
+        );
+        if (!request.isCurrent()) return;
+        if (response.ok) {
+          const data = await response.json();
+          if (!request.isCurrent()) return;
+          setResults(data.data || []);
+        }
+      } catch (error) {
+        if (!request.isCurrent() || request.signal.aborted) return;
+        console.error("Search failed:", error);
+      } finally {
+        if (request.isCurrent()) setIsLoading(false);
+      }
+    };
+    void search();
   }, [query]);
 
   return (
@@ -98,7 +110,9 @@ function SearchResults() {
                 <h3 className="text-lg font-bold mb-1">{restaurant.name}</h3>
                 <div className="flex items-center text-sm text-gray-500 mb-2">
                   <MapPin className="w-4 h-4 mr-1" />
-                  {[restaurant.location?.address1, restaurant.location?.city].filter(Boolean).join(", ") || "Address unavailable"}
+                  {[restaurant.location?.address1, restaurant.location?.city]
+                    .filter(Boolean)
+                    .join(", ") || "Address unavailable"}
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-orange-600 font-medium">
@@ -127,9 +141,14 @@ function SearchResults() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div className="container mx-auto px-4 py-16 text-center">Loading search...</div>}>
+    <Suspense
+      fallback={
+        <div className="container mx-auto px-4 py-16 text-center">
+          Loading search...
+        </div>
+      }
+    >
       <SearchResults />
     </Suspense>
   );
 }
-
