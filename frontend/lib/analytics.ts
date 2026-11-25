@@ -22,6 +22,13 @@ export function barHeightPercent(value: number, max: number): number {
   return Math.max(0, Math.min(100, (value / max) * 100));
 }
 
+export function trendDirection(change: number | undefined): "up" | "down" | "neutral" | undefined {
+  if (typeof change !== "number" || !Number.isFinite(change)) return undefined;
+  if (change > 0) return "up";
+  if (change < 0) return "down";
+  return "neutral";
+}
+
 export function trendPercentChange(votes: number[]): number | null {
   if (votes.length < 2) return null;
   // Equal-sized windows; with an odd count the middle value is left out.
