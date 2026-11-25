@@ -1,10 +1,8 @@
-import { FastifyRequest, FastifyReply } from "fastify";
+import type { onSendHookHandler } from "fastify";
 
-export function securityHeaders(
-    request: FastifyRequest,
-    reply: FastifyReply,
-    done: () => void
-): void {
+// onSend is (request, reply, payload, done). Treating the payload as `done`
+// throws "done is not a function" and turns every response into a 500.
+export const securityHeaders: onSendHookHandler = function (_request, reply, payload, done) {
     // Prevent clickjacking
     reply.header("X-Frame-Options", "DENY");
     reply.header("Content-Security-Policy", "frame-ancestors 'none'");
@@ -32,8 +30,8 @@ export function securityHeaders(
         );
     }
 
-    done();
-}
+    done(null, payload);
+};
 
 export function corsOptions(): Record<string, unknown> {
     return {
