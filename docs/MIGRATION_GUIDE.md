@@ -14,7 +14,7 @@ This migration guide documents the comprehensive upgrade from the legacy VoteDin
 - **Real-time**: Socket.io with basic handlers
 
 ### Modern Stack (Post-Migration)
-- **Frontend**: Next.js 15 + React 19 + TypeScript + Tailwind CSS v4
+- **Frontend**: Next.js 16 + React 19 + TypeScript + Tailwind CSS 3
 - **Backend**: Fastify 5 + TypeScript + Prisma ORM
 - **Database**: PostgreSQL 16 with Redis caching
 - **Auth**: JWT-based authentication

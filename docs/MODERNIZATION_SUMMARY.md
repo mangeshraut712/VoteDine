@@ -114,7 +114,7 @@
 ## 🛠️ Technical Stack
 
 ### Frontend Technologies
-- **Framework**: Next.js 15+ with App Router
+- **Framework**: Next.js 16 with App Router
 - **Language**: TypeScript 5+
 - **Styling**: Tailwind CSS 3+ with custom utilities
 - **UI Components**: Shadcn UI with Radix primitives
