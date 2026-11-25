@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import { z } from "zod";
+import { MIN_JWT_SECRET_LENGTH } from "../lib/jwt-secret.js";
 
 dotenv.config();
 
@@ -9,7 +10,7 @@ const envSchema = z.object({
     HOST: z.string().default("0.0.0.0"),
     DATABASE_URL: z.string().url(),
     REDIS_URL: z.string().url().optional(),
-    JWT_SECRET: z.string().min(32),
+    JWT_SECRET: z.string().min(MIN_JWT_SECRET_LENGTH),
     FRONTEND_URL: z.string().url().default("http://localhost:3000"),
 });
 
