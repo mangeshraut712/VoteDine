@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
+import { topCuisineByVotes } from "../lib/cuisines.js";
 import { addVotesToBuckets, bucketsToTrend, buildUtcDayBuckets } from "../lib/dates.js";
 
 const trendQuerySchema = z.object({
@@ -17,24 +18,21 @@ export async function analyticsRoutes(
   _options: FastifyPluginOptions
 ) {
   fastify.get("/overview", async (_request: FastifyRequest, reply: FastifyReply) => {
-    const [rooms, activeRooms, users, restaurants, votes, topCuisineGroups, voteGroups] = await Promise.all([
+    const [rooms, activeRooms, users, restaurants, votes, voteGroups, cuisineVotes] = await Promise.all([
       fastify.prisma.room.count(),
       fastify.prisma.room.count({ where: { isActive: true } }),
       fastify.prisma.user.count(),
       fastify.prisma.restaurant.count(),
       fastify.prisma.vote.aggregate({ _sum: { voteCount: true } }),
-      fastify.prisma.restaurant.groupBy({
-        by: ["cuisine"],
-        _count: { cuisine: true },
-        where: { cuisine: { not: null } },
-        orderBy: { _count: { cuisine: "desc" } },
-        take: 1,
-      }),
       fastify.prisma.vote.groupBy({
         by: ["restaurantId"],
         _sum: { voteCount: true },
         orderBy: { _sum: { voteCount: "desc" } },
         take: 5,
+      }),
+      fastify.prisma.vote.findMany({
+        where: { voteCount: { gt: 0 } },
+        select: { voteCount: true, restaurant: { select: { cuisine: true } } },
       }),
     ]);
 
@@ -62,7 +60,9 @@ export async function analyticsRoutes(
     addVotesToBuckets(dayBuckets, votingTrendsData);
     const votingTrends = bucketsToTrend(dayBuckets);
 
-    const topCuisine = topCuisineGroups[0]?.cuisine ?? "Mixed";
+    const topCuisine = topCuisineByVotes(
+      cuisineVotes.map((row) => ({ cuisine: row.restaurant.cuisine, votes: row.voteCount })),
+    );
     const totalVotes = votes._sum.voteCount ?? 0;
 
     return reply.send({
