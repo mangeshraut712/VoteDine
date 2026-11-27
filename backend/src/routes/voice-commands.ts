@@ -53,6 +53,13 @@ export async function voiceCommandsRoutes(fastify: FastifyInstance) {
             error: { type: 'string' }
           }
         },
+        501: {
+          description: 'Speech recognition is not implemented yet',
+          type: 'object',
+          properties: {
+            error: { type: 'string' }
+          }
+        },
         500: {
           type: 'object',
           properties: {
@@ -63,16 +70,14 @@ export async function voiceCommandsRoutes(fastify: FastifyInstance) {
     }
   }, async (request, reply) => {
     try {
-      const body = request.body as { audio?: string; settings?: VoiceSettings; roomId?: string };
+      const body = request.body as { audio?: string };
       const audioData = body.audio || '';
       if (!isAcceptableAudioPayload(audioData)) {
         return reply.code(400).send({ error: 'Audio payload is missing or too large' });
       }
-      const settings: VoiceSettings = body.settings || { enabled: true, language: 'en-US', confidence: 0.7, autoSubmit: false };
-      const roomId = body.roomId;
-
-      const response = await voiceService.processVoiceCommand(audioData, settings, roomId);
-      return reply.send(response);
+      // speechToText always returned the same Italian-restaurant sentence.
+      // Say the provider is missing instead of pretending the audio was understood.
+      return reply.code(501).send({ error: 'Speech recognition is not available yet' });
     } catch (error) {
       fastify.log.error(error);
       return reply.code(500).send({ error: 'Failed to process voice command' });

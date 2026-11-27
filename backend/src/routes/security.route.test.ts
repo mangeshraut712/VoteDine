@@ -259,6 +259,21 @@ describe("authenticated routes", () => {
     expect(response.statusCode).toBe(400);
   });
 
+  it("does not pretend to understand an audio command", async () => {
+    const app = await buildApp((instance) => voiceCommandsRoutes(instance), {});
+    apps.push(app);
+    const response = await app.inject({
+      method: "POST",
+      url: "/process",
+      payload: { audio: "AAAA" },
+    });
+    expect(response.statusCode).toBe(501);
+    const body = JSON.parse(response.body);
+    expect(body.error).toMatch(/not available/i);
+    expect(body).not.toHaveProperty("text");
+    expect(body).not.toHaveProperty("action");
+  });
+
   it("does not pretend to synthesize speech or serve empty audio", async () => {
     const app = await buildApp((instance) => voiceCommandsRoutes(instance), {});
     apps.push(app);
