@@ -47,17 +47,24 @@ describe("JWT secret resolution", () => {
 });
 
 describe("committed configuration never ships a usable signing key", () => {
+    function dotenvValue(source: string, key: string): string {
+        const match = source.match(new RegExp(`^${key}=("([^"\\n]*)"|([^\\s#][^\\n]*))`, "m"));
+        if (!match) return "";
+        return match[2] ?? match[3] ?? "";
+    }
+
     it("docker-compose has no public JWT_SECRET fallback", () => {
         const compose = readFileSync(join(repoRoot, "docker-compose.yml"), "utf8");
         const fallback = compose.match(/JWT_SECRET=\$\{JWT_SECRET:-([^}]*)\}/)?.[1];
         // The backend service runs as NODE_ENV=production, so it must be configured explicitly.
         expect(fallback).toBe("");
+        expect(() => resolveJwtSecret(fallback, "production")).toThrow(/JWT_SECRET/);
     });
 
-    it(".env.example documents a placeholder, not a usable secret", () => {
+    it("copying .env.example verbatim cannot produce a usable production secret", () => {
         const example = readFileSync(join(repoRoot, ".env.example"), "utf8");
-        const documented = example.match(/^JWT_SECRET=["']?([^"'\n]+)["']?/m)?.[1] ?? "";
-        expect(documented).toMatch(/generate one/);
-        expect(documented).not.toMatch(/^[a-z0-9-]+$/);
+        const documented = dotenvValue(example, "JWT_SECRET");
+        // The documented value must be rejected by the real gate, whatever its shape.
+        expect(() => resolveJwtSecret(documented, "production")).toThrow(/JWT_SECRET/);
     });
 });

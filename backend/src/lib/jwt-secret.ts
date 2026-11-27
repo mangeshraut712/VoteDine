@@ -10,7 +10,10 @@ const KNOWN_COMPROMISED_SECRETS = new Set(["your-super-secret-jwt-key", "your-su
  * resolveJwtSecret so that the configured value has no path to this log sink.
  */
 function warnGeneratedSecret(nodeEnv: string): void {
-  console.warn(`JWT_SECRET is shorter than ${MIN_JWT_SECRET_LENGTH} characters; using a generated secret for ${nodeEnv}.`);
+    // lgtm [js/clear-text-logging] CodeQL[js/clear-text-logging]: false positive.
+    // This interpolates only MIN_JWT_SECRET_LENGTH (a constant) and the environment
+    // name; the configured secret has no parameter path into this function.
+    console.warn(`JWT_SECRET is shorter than ${MIN_JWT_SECRET_LENGTH} characters; using a generated secret for ${nodeEnv}`);
 }
 
 /**
