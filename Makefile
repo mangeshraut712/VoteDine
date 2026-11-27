@@ -88,7 +88,10 @@ db-migrate:
 db-reset:
 	@echo "WARNING: This will delete all data!"
 	@read -p "Are you sure? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
-	docker-compose down -v
+	docker-compose stop postgres
+	docker-compose rm -f postgres
+	@volume="$$(docker-compose config 2>/dev/null | awk '/^volumes:/{v=1} v&&/postgres_data:/{p=1;next} p&&/name:/{sub(/.*name:[ ]*/,"");print;exit}')"; \
+	if [ -n "$$volume" ]; then docker volume rm "$$volume" || true; fi
 	docker-compose up -d postgres
 	@sleep 5
 	cd backend && npx prisma migrate dev
