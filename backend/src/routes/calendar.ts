@@ -47,8 +47,11 @@ export async function calendarRoutes(fastify: FastifyInstance) {
       },
       response: {
         401: {
+          description: 'Sent by the authenticate preHandler ({ success, message }) or the handler ({ error })',
           type: 'object',
           properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
             error: { type: 'string' }
           }
         },
@@ -90,8 +93,11 @@ export async function calendarRoutes(fastify: FastifyInstance) {
       },
       response: {
         401: {
+          description: 'Sent by the authenticate preHandler ({ success, message }) or the handler ({ error })',
           type: 'object',
           properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
             error: { type: 'string' }
           }
         },
