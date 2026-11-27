@@ -7,9 +7,9 @@ This is a comprehensive upgrade of the VoteDine application using cutting-edge 2
 ## Technology Stack
 
 ### Frontend (2026 Modern Stack)
-- **Framework**: Next.js 15 with React 19
+- **Framework**: Next.js 16 with React 19
 - **Language**: TypeScript 5.7
-- **Styling**: Tailwind CSS v4 with shadcn/ui components
+- **Styling**: Tailwind CSS 3 with shadcn/ui components
 - **State Management**: Zustand 5 + TanStack Query v5
 - **Real-time**: Socket.io-client v4
 - **Form Handling**: React Hook Form v7 + Zod validation
@@ -41,7 +41,7 @@ This is a comprehensive upgrade of the VoteDine application using cutting-edge 2
 ┌─────────────────────────────────────────────────────────────┐
 │                        CLIENT LAYER                         │
 │  ┌─────────────────┐  ┌─────────────────┐                  │
-│  │   Next.js 15    │  │   Socket.io     │                  │
+│  │   Next.js 16    │  │   Socket.io     │                  │
 │  │   React 19      │  │   Client        │                  │
 │  │   TypeScript    │  │                 │                  │
 │  └────────┬────────┘  └────────┬────────┘                  │
@@ -76,7 +76,7 @@ This is a comprehensive upgrade of the VoteDine application using cutting-edge 2
 
 ```
 votedine/
-├── frontend/                    # Next.js 15 frontend
+├── frontend/                    # Next.js 16 frontend
 │   ├── app/                     # App router
 │   │   ├── api/                 # API routes
 │   │   ├── layout.tsx           # Root layout
@@ -123,8 +123,8 @@ votedine/
 ├── .env.example                 # Environment variables
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml               # CI pipeline
-│       └── cd.yml               # CD pipeline
+│       ├── ci-cd.yml            # CI/CD pipeline
+│       └── github-pages.yml     # GitHub Pages deploy
 └── README.md                    # This file
 ```
 
@@ -333,7 +333,7 @@ npm run test:coverage # Coverage report
 ## Performance Optimizations
 
 ### Frontend
-- Next.js 15 with App Router for optimal SSR/SSG
+- Next.js 16 with App Router for optimal SSR/SSG
 - Turbopack for faster development builds
 - Image optimization with next/image
 - Code splitting and lazy loading

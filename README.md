@@ -53,9 +53,9 @@ cd frontend && npm run dev
 
 <div align="center">
 
-![VoteDine](https://img.shields.io/badge/Next.js-15.5.11-000000?style=for-the-badge&logo=next.js&logoColor=white)
-![Fastify](https://img.shields.io/badge/Fastify-5.2.0-000000?style=for-the-badge&logo=fastify&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.7.2-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![VoteDine](https://img.shields.io/badge/Next.js-16.4.5-000000?style=for-the-badge&logo=next.js&logoColor=white)
+![Fastify](https://img.shields.io/badge/Fastify-5.12.7-000000?style=for-the-badge&logo=fastify&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-24.0.7-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 
@@ -128,7 +128,7 @@ Group restaurant decisions with real-time voting, live updates, and restaurant d
 
 ## Repository Layout
 
-- `frontend/` - Next.js 15 App Router UI
+- `frontend/` - Next.js 16 App Router UI
 - `backend/` - Fastify 5 API server
 - `docker-compose.yml` - Local Postgres, Redis, API, and UI
 - `docs/` - Architecture notes and migration references
@@ -179,7 +179,7 @@ See `.env.example` for the full list. Common variables:
 ```env
 DATABASE_URL=postgresql://postgres:password@localhost:5432/votedine?schema=public
 REDIS_URL=redis://localhost:6379
-JWT_SECRET=change-me
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
 YELP_API_KEY=your-yelp-api-key
 GOOGLE_MAPS_API_KEY=your-google-maps-api-key
 PORT=3001
@@ -231,7 +231,7 @@ Socket.io events are handled in `backend/src/socket/handlers.ts`.
 
 ## Notes
 
-- The frontend uses Next.js 15 with Tailwind CSS 3 and Radix UI primitives.
+- The frontend uses Next.js 16 with Tailwind CSS 3 and Radix UI primitives.
 - Docker builds use Next.js standalone output (`output: 'standalone'`).
 - Rate limiting is configured at 100 requests per minute per IP.
 - All errors are logged with request context (method, URL, IP, user-agent).
