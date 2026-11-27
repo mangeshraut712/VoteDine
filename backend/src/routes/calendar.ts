@@ -46,40 +46,32 @@ export async function calendarRoutes(fastify: FastifyInstance) {
         }
       },
       response: {
-        200: {
+        401: {
+          description: 'Sent by the authenticate preHandler ({ success, message }) or the handler ({ error })',
           type: 'object',
           properties: {
             success: { type: 'boolean' },
+            message: { type: 'string' },
+            error: { type: 'string' }
+          }
+        },
+        501: {
+          description: 'Calendar OAuth is not implemented yet',
+          type: 'object',
+          properties: {
             error: { type: 'string' }
           }
         }
       }
     }
   }, async (request, reply) => {
-    try {
-      const userId = getAuthUserId(request.user);
-      const { provider, accessToken, refreshToken } = request.body as {
-        provider: string;
-        accessToken: string;
-        refreshToken?: string;
-      };
-
-      if (!userId) {
-        return reply.code(401).send({ error: 'Authentication required' });
-      }
-
-      const result = await calendarService.connectCalendar(
-        userId,
-        provider as CalendarProvider,
-        accessToken,
-        refreshToken
-      );
-
-      return reply.send(result);
-    } catch (error) {
-      fastify.log.error(error as unknown, 'Failed to sync calendar:');
-      return reply.code(500).send({ error: 'Failed to sync calendar' });
+    const userId = getAuthUserId(request.user);
+    if (!userId) {
+      return reply.code(401).send({ error: 'Authentication required' });
     }
+    // connectCalendar returned success without storing a token. Status then
+    // reported the account as disconnected.
+    return reply.code(501).send({ error: 'Calendar account connection is not available yet' });
   });
 
   // POST /disconnect - Disconnect user's calendar
@@ -98,24 +90,32 @@ export async function calendarRoutes(fastify: FastifyInstance) {
             description: 'Calendar provider to disconnect'
           }
         }
+      },
+      response: {
+        401: {
+          description: 'Sent by the authenticate preHandler ({ success, message }) or the handler ({ error })',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            error: { type: 'string' }
+          }
+        },
+        501: {
+          description: 'Calendar OAuth is not implemented yet',
+          type: 'object',
+          properties: {
+            error: { type: 'string' }
+          }
+        }
       }
     }
   }, async (request, reply) => {
-    try {
-      const userId = getAuthUserId(request.user);
-      const { provider } = request.body as { provider: string };
-
-      if (!userId) {
-        return reply.code(401).send({ error: 'Authentication required' });
-      }
-
-      await calendarService.disconnectCalendar(userId, provider as CalendarProvider);
-
-      return reply.send({ success: true });
-    } catch (error) {
-      fastify.log.error(error as unknown, 'Failed to disconnect calendar:');
-      return reply.code(500).send({ error: 'Failed to disconnect calendar' });
+    const userId = getAuthUserId(request.user);
+    if (!userId) {
+      return reply.code(401).send({ error: 'Authentication required' });
     }
+    return reply.code(501).send({ error: 'Calendar account connection is not available yet' });
   });
 
   // POST /events - Create dining event

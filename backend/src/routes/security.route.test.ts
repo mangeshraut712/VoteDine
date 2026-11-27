@@ -169,6 +169,49 @@ describe("authenticated routes", () => {
     expect(calendarEvent.findMany).not.toHaveBeenCalled();
   });
 
+  it("does not report a calendar account as connected when OAuth is missing", async () => {
+    const app = await buildApp((instance) => calendarRoutes(instance), {
+      calendarEvent: { findMany: vi.fn(), create: vi.fn() },
+      room: { findFirst: vi.fn() },
+    });
+    apps.push(app);
+
+    const connect = await app.inject({
+      method: "POST",
+      url: "/connect",
+      headers: { authorization: "Bearer valid" },
+      payload: { provider: "google", accessToken: "token" },
+    });
+    expect(connect.statusCode).toBe(501);
+    expect(JSON.parse(connect.body).success).toBeUndefined();
+
+    const status = await app.inject({
+      method: "GET",
+      url: "/status",
+      headers: { authorization: "Bearer valid" },
+    });
+    expect(status.statusCode).toBe(200);
+    expect(JSON.parse(status.body).connected).toBe(false);
+  });
+
+  it("keeps the authentication error body on the calendar 401 responses", async () => {
+    const app = await buildApp((instance) => calendarRoutes(instance), {
+      calendarEvent: { findMany: vi.fn(), create: vi.fn() },
+    });
+    apps.push(app);
+
+    // Fastify serializes the preHandler's reply through the route's response
+    // schema, so a 401 schema that omits success/message strips them.
+    for (const [method, url, payload] of [
+      ["POST", "/connect", { provider: "google", accessToken: "token" }],
+      ["POST", "/disconnect", { provider: "google" }],
+    ] as const) {
+      const response = await app.inject({ method, url, payload });
+      expect(response.statusCode).toBe(401);
+      expect(JSON.parse(response.body)).toEqual({ success: false, message: "Unauthorized" });
+    }
+  });
+
   it("stores a calendar event on the room id, not the share code", async () => {
     const calendarEvent = {
       create: vi.fn(async ({ data }: { data: { roomId?: string; title: string; userId: number } }) => ({
