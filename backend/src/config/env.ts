@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import { z } from "zod";
-import { MIN_JWT_SECRET_LENGTH } from "../lib/jwt-secret.js";
+import { resolveJwtSecret } from "../lib/jwt-secret.js";
 
 dotenv.config();
 
@@ -10,11 +10,18 @@ const envSchema = z.object({
     HOST: z.string().default("0.0.0.0"),
     DATABASE_URL: z.string().url(),
     REDIS_URL: z.string().url().optional(),
-    JWT_SECRET: z.string().min(MIN_JWT_SECRET_LENGTH),
+    // Length is enforced by resolveJwtSecret, which generates a secret for
+    // development and refuses to start in production without a strong one.
+    JWT_SECRET: z.string().optional(),
     FRONTEND_URL: z.string().url().default("http://localhost:3000"),
 });
 
-export const env = envSchema.parse(process.env);
+const parsedEnv = envSchema.parse(process.env);
+
+export const env = {
+    ...parsedEnv,
+    JWT_SECRET: resolveJwtSecret(parsedEnv.JWT_SECRET, parsedEnv.NODE_ENV),
+};
 
 // Validate required environment variables
 export function validateEnv(): void {
