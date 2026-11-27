@@ -6,6 +6,14 @@ export const MIN_JWT_SECRET_LENGTH = 32;
 const KNOWN_COMPROMISED_SECRETS = new Set(["your-super-secret-jwt-key", "your-super-secret-jwt-key-change-in-production"]);
 
 /**
+ * Warns that a generated secret is being used. Kept separate from
+ * resolveJwtSecret so that the configured value has no path to this log sink.
+ */
+function warnGeneratedSecret(nodeEnv: string): void {
+  console.warn(`JWT_SECRET is shorter than ${MIN_JWT_SECRET_LENGTH} characters; using a generated secret for ${nodeEnv}.`);
+}
+
+/**
  * Resolves the signing secret for a process.
  *
  * Production must configure a strong secret: a committed default would be public,
@@ -31,10 +39,6 @@ export function resolveJwtSecret(
     );
   }
 
-  if (value) {
-    console.warn(
-      `JWT_SECRET is shorter than ${MIN_JWT_SECRET_LENGTH} characters; using a generated secret for ${nodeEnv}.`,
-    );
-  }
+  if (value) warnGeneratedSecret(nodeEnv);
   return randomBytes(32).toString("hex");
 }
