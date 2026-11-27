@@ -141,9 +141,10 @@ async function main() {
   process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
   try {
-    await fastify.listen({ port, host });
-    logger.info(`Server running on http://${host}:${port}`);
-    logger.info(`Documentation available at http://${host}:${port}/docs`);
+    // Fastify resolves to the address actually bound and logs "Server listening at …"
+    // itself, so no env-derived host/port needs to be interpolated here.
+    const address = await fastify.listen({ port, host });
+    logger.info(`Documentation available at ${address}/docs`);
   } catch (err) {
     logger.error(err);
     process.exit(1);
