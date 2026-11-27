@@ -91,7 +91,8 @@ db-reset:
 	docker-compose stop postgres
 	docker-compose rm -f postgres
 	@volume="$$(docker-compose config 2>/dev/null | awk '/^volumes:/{v=1} v&&/postgres_data:/{p=1;next} p&&/name:/{sub(/.*name:[ ]*/,"");print;exit}')"; \
-	if [ -n "$$volume" ]; then docker volume rm "$$volume" || true; fi
+	if [ -z "$$volume" ]; then echo "db-reset: could not resolve the postgres volume name; nothing was deleted" >&2; exit 1; fi; \
+	docker volume rm "$$volume" || true
 	docker-compose up -d postgres
 	@sleep 5
 	cd backend && npx prisma migrate dev

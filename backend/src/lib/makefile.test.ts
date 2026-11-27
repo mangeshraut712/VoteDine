@@ -20,9 +20,18 @@ describe("make db-reset", () => {
   it("only touches postgres so the rest of the stack keeps running", () => {
     const reset = resetTarget();
     // `down -v` removes every service and volume, leaving the app offline after a reset.
-    expect(reset).not.toContain("down -v");
-    expect(reset).not.toMatch(/docker-compose (stop|rm|up)[^\n]*\b(redis|backend|frontend)\b/);
-    expect(reset).toContain("docker-compose stop postgres");
-    expect(reset).toContain("docker-compose up -d postgres");
-  });
+        expect(reset).not.toContain("down -v");
+        expect(reset).not.toMatch(/docker-compose (stop|rm|up)[^\n]*\b(redis|backend|frontend)\b/);
+        expect(reset).toContain("docker-compose stop postgres");
+        expect(reset).toContain("docker-compose up -d postgres");
+    });
+
+    it("fails loudly when the volume name cannot be resolved", () => {
+        const reset = resetTarget();
+        // An unresolved name must abort the reset; skipping the removal silently
+        // would report success while leaving the data in place. The source keeps
+        // Make's "$$" escape for a literal "$".
+        expect(reset).toMatch(/if \[ -z "\$\$volume" \]; then .*exit 1; fi/);
+        expect(reset).not.toMatch(/if \[ -n "\$\$volume" \]; then/);
+    });
 });
