@@ -22,6 +22,9 @@ describe("security headers onSend hook", () => {
     expect(response.headers["x-frame-options"]).toBe("DENY");
     expect(response.headers["content-security-policy"]).toBe("frame-ancestors 'none'");
     expect(response.headers["x-content-type-options"]).toBe("nosniff");
+    expect(response.headers["x-xss-protection"]).toBe("1; mode=block");
+    expect(response.headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+    expect(response.headers["permissions-policy"]).toBe("geolocation=(), microphone=(), camera=()");
     expect(response.headers["strict-transport-security"]).toBeUndefined();
     await app.close();
   });
