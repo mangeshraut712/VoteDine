@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { barHeightPercent, formatUtcWeekday, trendPercentChange } from "./analytics";
+import { barHeightPercent, formatUtcWeekday, trendDirection, trendPercentChange } from "./analytics";
 
 describe("analytics display", () => {
   it("labels a UTC date key as that UTC weekday", () => {
@@ -16,6 +16,13 @@ describe("analytics display", () => {
   it("does not divide by zero when every bucket is empty", () => {
     expect(barHeightPercent(0, 0)).toBe(0);
     expect(barHeightPercent(3, 6)).toBe(50);
+  });
+
+  it("does not invent an upward trend when the change is missing", () => {
+    expect(trendDirection(undefined)).toBeUndefined();
+    expect(trendDirection(12)).toBe("up");
+    expect(trendDirection(-3)).toBe("down");
+    expect(trendDirection(0)).toBe("neutral");
   });
 
   it("computes the change from the series instead of a fixed percent", () => {

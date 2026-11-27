@@ -18,7 +18,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { demoAnalytics, isDemoMode } from "@/lib/demo";
 import { apiUrl } from "@/lib/api";
-import { barHeightPercent, formatUtcWeekday, trendPercentChange } from "@/lib/analytics";
+import { barHeightPercent, formatUtcWeekday, trendDirection, trendPercentChange } from "@/lib/analytics";
 
 interface AnalyticsData {
   totalRooms: number;
@@ -163,20 +163,13 @@ export default function AnalyticsDashboard() {
         value: data?.totalRooms || 0,
         change: data?.trends?.roomsChange,
         color: "from-blue-500 to-cyan-500",
-        trend: (data?.trends?.roomsChange
-          ? data.trends.roomsChange > 0
-            ? "up"
-            : data.trends.roomsChange < 0
-              ? "down"
-              : "neutral"
-          : undefined) as "up" | "down" | "neutral" | undefined,
+        trend: trendDirection(data?.trends?.roomsChange),
       },
       {
         icon: TrendingUp,
         label: "Active Rooms",
         value: data?.activeRooms || 0,
         color: "from-green-500 to-emerald-500",
-        trend: "up" as const,
       },
       {
         icon: Vote,
@@ -184,13 +177,7 @@ export default function AnalyticsDashboard() {
         value: data?.totalVotes || 0,
         change: data?.trends?.votesChange,
         color: "from-orange-500 to-red-500",
-        trend: (data?.trends?.votesChange
-          ? data.trends.votesChange > 0
-            ? "up"
-            : data.trends.votesChange < 0
-              ? "down"
-              : "neutral"
-          : undefined) as "up" | "down" | "neutral" | undefined,
+        trend: trendDirection(data?.trends?.votesChange),
       },
       {
         icon: Utensils,
@@ -305,7 +292,7 @@ export default function AnalyticsDashboard() {
                   Top Restaurants
                 </h3>
                 <p className="text-sm text-gray-500">
-                  Most voted restaurants this month
+                  Most voted restaurants
                 </p>
               </div>
             </div>
@@ -362,7 +349,7 @@ export default function AnalyticsDashboard() {
                 <div className="text-2xl font-bold text-blue-900">
                   {data?.activeRooms || 0}
                 </div>
-                <div className="text-sm text-blue-700">Active Today</div>
+                <div className="text-sm text-blue-700">Active Rooms</div>
               </div>
             </div>
           </CardContent>
