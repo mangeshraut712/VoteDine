@@ -6,15 +6,14 @@ export const MIN_JWT_SECRET_LENGTH = 32;
 const KNOWN_COMPROMISED_SECRETS = new Set(["your-super-secret-jwt-key", "your-super-secret-jwt-key-change-in-production"]);
 
 /**
- * Warns that a generated secret is being used. Kept separate from
- * resolveJwtSecret so that the configured value has no path to this log sink.
+ * Warns that a too-short configured secret was replaced by a generated one.
+ * Only a constant and no process-environment value reaches this log sink, so
+ * CodeQL sees no clear-text flow.
  */
-function warnGeneratedSecret(nodeEnv: string): void {
-    // This interpolates only MIN_JWT_SECRET_LENGTH (a constant) and the environment
-    // name; the configured secret has no parameter path into this function.
-    // lgtm [js/clear-text-logging]
-    // CodeQL[js/clear-text-logging]: false positive — no secret reaches this call.
-    console.warn(`JWT_SECRET is shorter than ${MIN_JWT_SECRET_LENGTH} characters; using a generated secret for ${nodeEnv}`);
+function warnGeneratedSecret(): void {
+  console.warn(
+    `JWT_SECRET is shorter than ${MIN_JWT_SECRET_LENGTH} characters; using a generated secret for this process instead. Tokens will not survive a restart and will not be shared across instances.`,
+  );
 }
 
 /**
@@ -22,7 +21,7 @@ function warnGeneratedSecret(nodeEnv: string): void {
  *
  * Production must configure a strong secret: a committed default would be public,
  * and anyone could mint a token for any user. Development and test get a random
- * secret per process when none is configured, so local setup boots without one.
+ * secret when none is configured, so local setup boots without one.
  */
 export function resolveJwtSecret(
   configured: string | undefined,
@@ -43,6 +42,6 @@ export function resolveJwtSecret(
     );
   }
 
-  if (value) warnGeneratedSecret(nodeEnv);
+  if (value) warnGeneratedSecret();
   return randomBytes(32).toString("hex");
 }
