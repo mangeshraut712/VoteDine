@@ -142,7 +142,12 @@ async function main() {
 
   try {
     await fastify.listen({ port, host });
+    // Logs only the bind address and port, never a secret.
+    // lgtm [js/clear-text-logging]
+    // CodeQL[js/clear-text-logging]: false positive — host and port are not sensitive.
     logger.info(`Server running on http://${host}:${port}`);
+    // lgtm [js/clear-text-logging]
+    // CodeQL[js/clear-text-logging]: false positive — host and port are not sensitive.
     logger.info(`Documentation available at http://${host}:${port}/docs`);
   } catch (err) {
     logger.error(err);
